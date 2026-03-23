@@ -207,7 +207,6 @@ const STYLES = `
     height: 100%;
     border: none !important;
     border-radius: 3px;
-    background: transparent;
     margin: 0;
     padding: 0;
     vertical-align: top;
@@ -845,7 +844,6 @@ export default function MaverickBrobotForm() {
                       height: "100%",
                       border: "none",
                       borderRadius: "3px",
-                      background: "transparent",
                     }}
                     id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-layout="{'id':'INLINE'}"
@@ -855,13 +853,11 @@ export default function MaverickBrobotForm() {
                     data-activation-value=""
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
-                    data-form-name="Porting Form "
+                    data-form-name={"Porting Form\u00a0"}
                     data-height="593"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
-                    title="Porting Form"
-                    allowTransparency="true"
-                    frameBorder={0}
+                    title={"Porting Form\u00a0"}
                   />
                 </div>
                 <div className="mb-card-body">
