@@ -196,6 +196,9 @@ const STYLES = `
     border: none;
     outline: none;
     background: #111827;
+    /* Clip embed to rounded rect so default iframe “paper” doesn’t show at corners */
+    border-radius: 3px;
+    isolation: isolate;
     /* Matches data-height on iframe; extra scroll if embed grows after upload */
     height: 593px;
     margin-bottom: 12px;
@@ -206,6 +209,11 @@ const STYLES = `
     width: 100%;
     height: 100%;
     border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    /* iframe defaults to white; paint shell to match card so no white frame/letterbox */
+    background: #111827;
+    color-scheme: dark;
     border-radius: 3px;
     margin: 0;
     padding: 0;
@@ -844,7 +852,11 @@ export default function MaverickBrobotForm() {
                       height: "100%",
                       border: "none",
                       borderRadius: "3px",
+                      backgroundColor: "#111827",
+                      outline: "none",
+                      boxShadow: "none",
                     }}
+                    frameBorder={0}
                     id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-layout="{'id':'INLINE'}"
                     data-trigger-type="alwaysShow"
