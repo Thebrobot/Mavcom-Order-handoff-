@@ -501,6 +501,29 @@ export default function MaverickBrobotForm() {
     return u.toString();
   }, [contactEmailTrimmed]);
 
+  /** GHL form_embed.js reads the *host* page query string and forwards into the iframe; iframe ?email= alone often only appears in submission metadata. */
+  useLayoutEffect(() => {
+    if (step !== 5) return;
+    if (!looksLikeValidEmail(contactEmailTrimmed)) return;
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set(GHL_UPLOAD_FORM_EMAIL_PARAM, contactEmailTrimmed);
+      const q = u.searchParams.toString();
+      window.history.replaceState(null, "", `${u.pathname}${q ? `?${q}` : ""}${u.hash}`);
+    } catch (_) {}
+  }, [step, contactEmailTrimmed]);
+
+  useLayoutEffect(() => {
+    if (step === 5) return;
+    try {
+      const u = new URL(window.location.href);
+      if (!u.searchParams.has(GHL_UPLOAD_FORM_EMAIL_PARAM)) return;
+      u.searchParams.delete(GHL_UPLOAD_FORM_EMAIL_PARAM);
+      const q = u.searchParams.toString();
+      window.history.replaceState(null, "", `${u.pathname}${q ? `?${q}` : ""}${u.hash}`);
+    } catch (_) {}
+  }, [step]);
+
   const progFill = `${((step - 1) / (STEPS.length - 1)) * 100}%`;
 
   const goNext = () => { if (step < 5) setStep(s => s + 1); };
@@ -547,17 +570,6 @@ export default function MaverickBrobotForm() {
     l.rel = "prefetch";
     l.href = "https://link.msgsndr.com/js/form_embed.js";
     document.head.appendChild(l);
-  }, [step]);
-
-  useLayoutEffect(() => {
-    if (step !== 5) return;
-    const id = "msgsndr-form-embed-script";
-    if (document.getElementById(id)) return;
-    const s = document.createElement("script");
-    s.id = id;
-    s.src = "https://link.msgsndr.com/js/form_embed.js";
-    s.async = true;
-    document.body.appendChild(s);
   }, [step]);
 
   if (submitted) {
@@ -915,6 +927,14 @@ export default function MaverickBrobotForm() {
                       <span className="mb-callout-icon">⚠️</span>
                       <div className="mb-callout-text">
                         <strong>No valid email on file.</strong> Go back to step 1 and enter the client&apos;s email so uploads can link to the right contact in CRM. You can still upload, but files may not attach to a contact.
+                      </div>
+                    </div>
+                  ) : null}
+                  {looksLikeValidEmail(contactEmailTrimmed) ? (
+                    <div className="mb-callout mb-callout-c" style={{ marginBottom: 18 }} role="note">
+                      <span className="mb-callout-icon">🔗</span>
+                      <div className="mb-callout-text">
+                        This step adds <code style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 13 }}>?{GHL_UPLOAD_FORM_EMAIL_PARAM}=…</code> to <strong>this page&apos;s address bar</strong> on purpose — LeadConnector&apos;s embed script passes host URL parameters into the uploader. If CRM still shows a blank email on the submission, edit the GHL form and set the Email field to <strong>visible</strong> (URL prefill often skips hidden fields).
                       </div>
                     </div>
                   ) : null}
