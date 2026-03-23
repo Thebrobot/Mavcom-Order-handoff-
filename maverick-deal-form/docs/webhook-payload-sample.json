@@ -25,12 +25,12 @@
     }
   ],
   "productsJson": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
-  "products_json": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
   "productsText": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
-  "products_text": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
+  "products.json": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
+  "products.text": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
   "meta": {
-    "productsJson": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
-    "productsText": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo"
+    "products.json": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
+    "products.text": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo"
   },
   "totals": {
     "expectedMonthlyBilling": 299,

@@ -379,16 +379,16 @@ function buildWebhookPayload(form, dealLineSummaries) {
       phone: form.biz_phone,
     },
     products: productsDetailed,
-    /** JSON string — map to Mavcom Products JSON (not raw `products`). Type path manually in GHL if not in picker. */
+    /** JSON string — map to Mavcom Products JSON (not raw `products`). */
     productsJson: productsJsonStr,
-    products_json: productsJsonStr,
     /** Plain-text lines — cannot become [object Object]. */
     productsText: productsLinesText,
-    products_text: productsLinesText,
-    /** Duplicate under `meta` so pickers that only nest under one object may expose these. */
+    /** Same strings with dot-style keys (no underscores) for merge tags / GHL. */
+    "products.json": productsJsonStr,
+    "products.text": productsLinesText,
     meta: {
-      productsJson: productsJsonStr,
-      productsText: productsLinesText,
+      "products.json": productsJsonStr,
+      "products.text": productsLinesText,
     },
     totals: {
       expectedMonthlyBilling: dealLineSummaries.sumMrc,

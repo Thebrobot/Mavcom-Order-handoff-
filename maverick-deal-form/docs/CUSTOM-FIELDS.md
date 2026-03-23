@@ -22,7 +22,7 @@ Prefix every label with **`Mavcom `** (space after Mavcom, no dash).
 | 12 | Mavcom Agreement confirmed | Checkbox | `confirmations.agreementSigned` |
 | 13 | Mavcom Payment confirmed | Checkbox | `confirmations.payment` |
 | 14 | Mavcom Onboarding confirmed | Checkbox | `confirmations.onboarding` |
-| 15 | Mavcom Products JSON | Large Text | `productsJson` *(string; same data as `products` array)* |
+| 15 | Mavcom Products JSON | Large Text | `productsJson` or `products.json` *(string; same data as `products` array)* |
 | 16 | Mavcom Submitted at | Text | `submittedAt` |
 
 **Optional:** **Mavcom Source** (Text) ← `source` (e.g. `maverick-deal-form`).
