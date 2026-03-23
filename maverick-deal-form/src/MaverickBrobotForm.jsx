@@ -191,15 +191,15 @@ const STYLES = `
   .mb-ghl-wrap {
     position: relative;
     overflow-x: hidden;
-    overflow-y: visible;
+    overflow-y: auto;
     outline: none;
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 3px;
     isolation: isolate;
-    /* Tall viewport-based area so the embed rarely needs its own scrollbar */
-    height: min(92vh, 1040px);
-    margin-bottom: 12px;
+    /* Enough height for the embed without a huge blank area under the frame */
+    height: min(72vh, 640px);
+    margin-bottom: 8px;
     line-height: 0;
   }
   .mb-ghl-wrap iframe {
@@ -859,7 +859,7 @@ export default function MaverickBrobotForm() {
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
                     data-form-name={"Porting Form\u00a0"}
-                    data-height="1000"
+                    data-height="640"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
                     title={"Porting Form\u00a0"}
