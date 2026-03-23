@@ -38,13 +38,13 @@ const STYLES = `
   /* PROGRESS */
   .mb-prog-wrap { margin-bottom: 32px; }
   .mb-prog-track-bg { position: relative; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .mb-prog-line { position: absolute; top: 50%; left: 14px; right: 14px; height: 1px; background: rgba(255,255,255,0.07); transform: translateY(-50%); }
-  .mb-prog-fill { position: absolute; top: 50%; left: 14px; height: 1px; background: linear-gradient(90deg, #f5a623, #38bdf8); transform: translateY(-50%); transition: width 0.4s ease; }
-  .mb-dot { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: #111827; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b; position: relative; z-index: 1; transition: all 0.3s; flex-shrink: 0; }
-  .mb-dot.active { border-color: #f5a623; background: rgba(245,166,35,0.12); color: #f5a623; }
-  .mb-dot.done { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #22c55e; }
+  .mb-prog-line { position: absolute; top: 50%; left: 14px; right: 14px; height: 2px; background: rgba(255,255,255,0.45); transform: translateY(-50%); }
+  .mb-prog-fill { position: absolute; top: 50%; left: 14px; height: 2px; background: linear-gradient(90deg, #f5a623, #38bdf8); transform: translateY(-50%); transition: width 0.4s ease; }
+  .mb-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.75); background: rgba(11,15,26,0.95); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #ffffff; position: relative; z-index: 1; transition: all 0.3s; flex-shrink: 0; }
+  .mb-dot.active { border-color: #f5a623; background: rgba(245,166,35,0.18); color: #f5a623; }
+  .mb-dot.done { border-color: #22c55e; background: rgba(34,197,94,0.15); color: #22c55e; }
   .mb-prog-labels { display: flex; justify-content: space-between; }
-  .mb-prog-labels span { font-size: 10px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; width: 28px; text-align: center; transition: color 0.3s; }
+  .mb-prog-labels span { font-size: 10px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.92); width: 28px; text-align: center; transition: color 0.3s; }
   .mb-prog-labels span.active { color: #f5a623; }
   .mb-prog-labels span.done { color: #22c55e; }
 
@@ -71,10 +71,17 @@ const STYLES = `
   .mb-input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 1;
-    filter: invert(1) brightness(1.15);
-    scale: 1.2;
-    padding: 6px;
-    margin-left: 4px;
+    filter: brightness(0) invert(1);
+    -webkit-filter: brightness(0) invert(1);
+    width: 1.35rem;
+    height: 1.35rem;
+    padding: 4px;
+    margin-left: 2px;
+  }
+  .mb-input[type="date"]::-moz-calendar-picker-indicator {
+    filter: brightness(0) invert(1);
+    opacity: 1;
+    cursor: pointer;
   }
   .mb-input[type="date"]::-webkit-datetime-edit-text { color: #e2e8f0; padding: 0 0.2em; }
   .mb-input[type="date"]::-webkit-datetime-edit-month-field,
