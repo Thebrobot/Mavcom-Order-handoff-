@@ -101,6 +101,8 @@ Use **Update Contact** / **Set custom field** actions. Map **from JSON** → **t
 2. If you still see **`[object Object]`**, you are still mapping the **`products`** array, or the workflow wasn’t published / the site wasn’t rebuilt after the app update.
 3. **Fallback:** Map **`{{inboundWebhookRequest.productsText}}`** to a Large Text field (or temporarily to Mavcom Products JSON) — it is always plain text, never objects.
 
+**Picker only lists `products`?** Type the merge tag manually — see **`docs/GHL-PRODUCTS-MAPPING.md`** (`productsJson`, `products_json`, `meta.productsJson`, etc.).
+
 Optional: add a **Note** (B7) with human-readable line items from `products[]`.
 
 ---

@@ -351,6 +351,17 @@ function buildWebhookPayload(form, dealLineSummaries) {
       contractTermMonths: p.term,
     };
   });
+  const productsJsonStr = JSON.stringify(productsDetailed);
+  const productsLinesText = productsDetailed
+    .map((line) => {
+      const name =
+        line.customLabel && String(line.customLabel).trim()
+          ? line.customLabel
+          : line.productLabel || line.productId || "Product";
+      return `${name} | MRC ${line.monthlyAmount} | Setup ${line.setupFee} | ${line.contractTermMonths} mo`;
+    })
+    .join("\n");
+
   return {
     source: "maverick-deal-form",
     submittedAt: new Date().toISOString(),
@@ -368,18 +379,17 @@ function buildWebhookPayload(form, dealLineSummaries) {
       phone: form.biz_phone,
     },
     products: productsDetailed,
-    /** JSON string of line items — in GHL map ONLY this to Mavcom Products JSON (not `products`). */
-    productsJson: JSON.stringify(productsDetailed),
-    /** Plain-text lines — use if GHL still coerces `productsJson`; map `productsText` to a Large Text field. */
-    productsText: productsDetailed
-      .map((line) => {
-        const name =
-          line.customLabel && String(line.customLabel).trim()
-            ? line.customLabel
-            : line.productLabel || line.productId || "Product";
-        return `${name} | MRC ${line.monthlyAmount} | Setup ${line.setupFee} | ${line.contractTermMonths} mo`;
-      })
-      .join("\n"),
+    /** JSON string — map to Mavcom Products JSON (not raw `products`). Type path manually in GHL if not in picker. */
+    productsJson: productsJsonStr,
+    products_json: productsJsonStr,
+    /** Plain-text lines — cannot become [object Object]. */
+    productsText: productsLinesText,
+    products_text: productsLinesText,
+    /** Duplicate under `meta` so pickers that only nest under one object may expose these. */
+    meta: {
+      productsJson: productsJsonStr,
+      productsText: productsLinesText,
+    },
     totals: {
       expectedMonthlyBilling: dealLineSummaries.sumMrc,
       totalSetupFees: dealLineSummaries.sumSetup,
