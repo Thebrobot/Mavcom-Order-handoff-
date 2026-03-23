@@ -848,11 +848,7 @@ export default function MaverickBrobotForm() {
                       height: "100%",
                       border: "none",
                       borderRadius: "3px",
-                      backgroundColor: "#ffffff",
-                      outline: "none",
-                      boxShadow: "none",
                     }}
-                    frameBorder={0}
                     id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-layout="{'id':'INLINE'}"
                     data-trigger-type="alwaysShow"
