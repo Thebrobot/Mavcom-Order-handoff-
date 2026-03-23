@@ -191,11 +191,14 @@ const STYLES = `
   .mb-card-upload-embed .mb-card-head { border-bottom: 1px solid rgba(255,255,255,0.07); }
   .mb-ghl-wrap {
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     border: none;
     outline: none;
     background: #111827;
-    height: 580px;
+    /* Extra height so the iframe form can grow after uploads without clipping the bottom / upload UI */
+    height: 720px;
+    margin-bottom: 24px;
     line-height: 0;
   }
   .mb-ghl-wrap iframe {
@@ -203,7 +206,7 @@ const STYLES = `
     top: -16px;
     left: -24px;
     width: calc(100% + 24px + 28px);
-    height: calc(100% + 32px);
+    height: calc(100% + 56px);
     display: block;
     border: 0 !important;
     outline: none !important;
@@ -860,7 +863,7 @@ export default function MaverickBrobotForm() {
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
                     data-form-name={"Porting Form\u00a0"}
-                    data-height="560"
+                    data-height="680"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
                     title={"Porting Form\u00a0"}
