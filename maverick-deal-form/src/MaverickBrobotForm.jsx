@@ -346,6 +346,16 @@ const PRODUCT_DEFAULT_MRC = {
   "bot-only-ai-priority": "499",
 };
 
+/** LeadConnector file-upload widget — `email` query param maps to hidden field in GHL. */
+const GHL_UPLOAD_FORM_EMBED_URL =
+  "https://api.leadconnectorhq.com/widget/form/H8C5vTrJlfHah3Evz0cR";
+
+function looksLikeValidEmail(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
 function parseMoney(raw) {
   if (raw == null) return NaN;
   const s = String(raw).trim();
@@ -478,6 +488,14 @@ export default function MaverickBrobotForm() {
     }
     return { sumMrc, sumSetup };
   }, [form.products]);
+
+  const contactEmailTrimmed = String(form.contact_email ?? "").trim();
+  const uploadIframeSrc = useMemo(() => {
+    if (!looksLikeValidEmail(contactEmailTrimmed)) return GHL_UPLOAD_FORM_EMBED_URL;
+    const u = new URL(GHL_UPLOAD_FORM_EMBED_URL);
+    u.searchParams.set("email", contactEmailTrimmed);
+    return u.toString();
+  }, [contactEmailTrimmed]);
 
   const progFill = `${((step - 1) / (STEPS.length - 1)) * 100}%`;
 
@@ -888,10 +906,18 @@ export default function MaverickBrobotForm() {
                     <span className="mb-callout-icon">📎</span>
                     <div className="mb-callout-text"><strong>Upload all required documents below.</strong> LOA and Signed Terms are required. AT&T Bill is required for port clients only. PDFs only.</div>
                   </div>
+                  {!looksLikeValidEmail(contactEmailTrimmed) ? (
+                    <div className="mb-callout mb-callout-o" style={{ marginBottom: 18 }} role="status">
+                      <span className="mb-callout-icon">⚠️</span>
+                      <div className="mb-callout-text">
+                        <strong>No valid email on file.</strong> Go back to step 1 and enter the client&apos;s email so uploads can link to the right contact in CRM. You can still upload, but files may not attach to a contact.
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="mb-ghl-wrap">
                   <iframe
-                    src="https://api.leadconnectorhq.com/widget/form/H8C5vTrJlfHah3Evz0cR"
+                    src={uploadIframeSrc}
                     style={{
                       width: "100%",
                       height: "100%",
