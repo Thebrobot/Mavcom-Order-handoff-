@@ -93,12 +93,11 @@ Use **Update Contact** / **Set custom field** actions. Map **from JSON** → **t
 | `confirmations.payment` | Mavcom Payment Confirmed | Checkbox |
 | `confirmations.onboarding` | Mavcom Onboarding Confirmed | Checkbox |
 | `submittedAt` | Mavcom Submitted At | Text |
+| `productsJson` | Mavcom Products JSON | **Large text** — the app sends this as a **string** (use this path, not raw `products`) |
 
-**Products JSON:** If your builder can stringify in one expression:
+**Products:** The payload includes **`products`** (array) and **`productsJson`** (same data as a JSON string). Map **`productsJson`** → **Mavcom Products JSON** in GHL (e.g. `{{inboundWebhookRequest.productsJson}}`) to avoid `[object Object]`.
 
-- **Mavcom Products JSON** ← `JSON.stringify` of the `products` array, **or** use a **Custom Code** / **Formatter** step that sets `products` to string.
-
-If you cannot stringify in the workflow, add a **Note** (B7) with line items only and leave Products JSON empty until you add a tiny middleware later.
+Optional: add a **Note** (B7) with human-readable line items from `products[]`.
 
 ---
 
@@ -186,6 +185,7 @@ The app posts from the browser. If blocked:
       "contractTermMonths": "36"
     }
   ],
+  "productsJson": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
   "totals": {
     "expectedMonthlyBilling": 299,
     "totalSetupFees": 500
@@ -231,6 +231,7 @@ The app posts from the browser. If blocked:
 | `business.website` | string |
 | `business.phone` | string |
 | `products` | array |
+| `productsJson` | string (JSON text of line items — use for Mavcom Products JSON) |
 | `totals.expectedMonthlyBilling` | number |
 | `totals.totalSetupFees` | number |
 | `billing.saleDate` | string (YYYY-MM-DD) |

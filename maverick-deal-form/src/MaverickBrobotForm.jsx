@@ -368,6 +368,8 @@ function buildWebhookPayload(form, dealLineSummaries) {
       phone: form.biz_phone,
     },
     products: productsDetailed,
+    /** JSON string of line items — map `productsJson` in GHL to Mavcom Products JSON (avoids [object Object] from raw `products`). */
+    productsJson: JSON.stringify(productsDetailed),
     totals: {
       expectedMonthlyBilling: dealLineSummaries.sumMrc,
       totalSetupFees: dealLineSummaries.sumSetup,

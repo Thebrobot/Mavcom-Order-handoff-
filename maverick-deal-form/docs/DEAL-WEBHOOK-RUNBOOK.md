@@ -45,7 +45,7 @@ In **Settings → Custom Fields** (Contacts), create fields you will map from th
 | Service start date | Date | `agreement.serviceStartDate` |
 | Internal notes | Large text | `notes` |
 | Deal line items (human-readable) | Large text | **Built in workflow** from `products` array (see §5) |
-| Products JSON (optional) | Large text | `JSON.stringify(products)` in workflow |
+| Products JSON (optional) | Large text | `productsJson` from webhook *(app sends stringified line items)* |
 
 **Why duplicate JSON + readable note?** Automations and reporting are easier on structured fields; humans can read a formatted note without opening JSON.
 
@@ -102,7 +102,7 @@ If your builder only flattens **one level**, use **Custom Code** or **Formatter*
 - Title: `Mavcom deal line items`
 - Body: loop `products[]` and print each line: `productLabel`, `customLabel`, `monthlyAmount`, `setupFee`, `contractTermMonths`
 
-**Option 2:** Store **one large text field** `Products JSON` = stringified `products` array for reporting exports.
+**Option 2:** Map **`productsJson`** from the webhook into **Mavcom Products JSON** (the app sends this as a string; do not map raw `products` to a text field).
 
 **Option 3:** **Opportunity** pipeline — create/update opportunity per deal with amount = `totals.expectedMonthlyBilling` or custom logic (requires pipeline design).
 
