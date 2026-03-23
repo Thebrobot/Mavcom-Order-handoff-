@@ -1,0 +1,51 @@
+{
+  "source": "maverick-deal-form",
+  "submittedAt": "2026-03-23T18:00:00.000Z",
+  "contact": {
+    "firstName": "Test",
+    "lastName": "Workflow",
+    "phone": "5551234567",
+    "email": "workflow-test@example.com"
+  },
+  "business": {
+    "legalName": "Sample Client LLC",
+    "address": "100 Main St, Austin, TX 78701",
+    "industry": "Healthcare",
+    "website": "https://example.com",
+    "phone": "5559876543"
+  },
+  "products": [
+    {
+      "productId": "brobot-one",
+      "productLabel": "Brobot One (voice, messaging & CRM)",
+      "customLabel": "",
+      "monthlyAmount": "299",
+      "setupFee": "500",
+      "contractTermMonths": "36"
+    }
+  ],
+  "totals": {
+    "expectedMonthlyBilling": 299,
+    "totalSetupFees": 500
+  },
+  "billing": {
+    "saleDate": "2026-03-20",
+    "billingType": "charge_today",
+    "ccCollected": "yes",
+    "estimatedChargeDate": "2026-03-25"
+  },
+  "rep": {
+    "name": "Rep Name",
+    "email": "rep@example.com"
+  },
+  "agreement": {
+    "signedDate": "2026-03-18",
+    "serviceStartDate": "2026-04-01"
+  },
+  "notes": "Workflow mapping test — safe to delete this contact.",
+  "confirmations": {
+    "agreementSigned": true,
+    "payment": true,
+    "onboarding": true
+  }
+}
