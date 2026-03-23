@@ -346,9 +346,13 @@ const PRODUCT_DEFAULT_MRC = {
   "bot-only-ai-priority": "499",
 };
 
-/** LeadConnector file-upload widget — `email` query param maps to hidden field in GHL. */
+/** LeadConnector file-upload widget — query param must match hidden field name in GHL (see .env.example). */
 const GHL_UPLOAD_FORM_EMBED_URL =
+  import.meta.env.VITE_GHL_UPLOAD_FORM_EMBED_URL?.trim() ||
   "https://api.leadconnectorhq.com/widget/form/H8C5vTrJlfHah3Evz0cR";
+
+const GHL_UPLOAD_FORM_EMAIL_PARAM =
+  import.meta.env.VITE_GHL_UPLOAD_FORM_EMAIL_PARAM?.trim() || "email";
 
 function looksLikeValidEmail(raw) {
   const s = String(raw ?? "").trim();
@@ -493,7 +497,7 @@ export default function MaverickBrobotForm() {
   const uploadIframeSrc = useMemo(() => {
     if (!looksLikeValidEmail(contactEmailTrimmed)) return GHL_UPLOAD_FORM_EMBED_URL;
     const u = new URL(GHL_UPLOAD_FORM_EMBED_URL);
-    u.searchParams.set("email", contactEmailTrimmed);
+    u.searchParams.set(GHL_UPLOAD_FORM_EMAIL_PARAM, contactEmailTrimmed);
     return u.toString();
   }, [contactEmailTrimmed]);
 
@@ -917,6 +921,7 @@ export default function MaverickBrobotForm() {
                 </div>
                 <div className="mb-ghl-wrap">
                   <iframe
+                    key={uploadIframeSrc}
                     src={uploadIframeSrc}
                     style={{
                       width: "100%",
@@ -942,7 +947,9 @@ export default function MaverickBrobotForm() {
                 <div className="mb-card-body">
                   <div className="mb-callout mb-callout-c" style={{ marginTop: 0 }}>
                     <span className="mb-callout-icon">💡</span>
-                    <div className="mb-callout-text">Files go directly into the client record in Brobot's CRM. Once uploaded, hit <strong>Submit Deal</strong> below.</div>
+                    <div className="mb-callout-text">
+                      <strong>Finish the uploader inside the frame.</strong> After you attach PDFs, click <strong>Submit</strong> (or <strong>Continue</strong>) <em>in the form above</em> so HighLevel saves the file to this contact. The <strong>Submit Deal</strong> button below only sends the deal to Brobot—it does not submit the GHL upload form.
+                    </div>
                   </div>
                 </div>
               </div>
