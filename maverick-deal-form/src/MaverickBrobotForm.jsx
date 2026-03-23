@@ -462,6 +462,7 @@ export default function MaverickBrobotForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [confirmUploadsDone, setConfirmUploadsDone] = useState(false);
 
   const [form, setForm] = useState({
     business_name: "", address: "", industry: "", website: "", biz_phone: "",
@@ -524,12 +525,17 @@ export default function MaverickBrobotForm() {
     } catch (_) {}
   }, [step]);
 
+  useEffect(() => {
+    if (step !== 5) setConfirmUploadsDone(false);
+  }, [step]);
+
   const progFill = `${((step - 1) / (STEPS.length - 1)) * 100}%`;
 
   const goNext = () => { if (step < 5) setStep(s => s + 1); };
   const goPrev = () => { if (step > 1) setStep(s => s - 1); };
 
   const handleSubmit = async () => {
+    if (!confirmUploadsDone) return;
     const url = import.meta.env.VITE_SUBMIT_WEBHOOK_URL;
     if (!url || !String(url).trim()) {
       setSubmitError("Add your webhook URL to the environment as VITE_SUBMIT_WEBHOOK_URL (see .env.example), then rebuild.");
@@ -930,14 +936,6 @@ export default function MaverickBrobotForm() {
                       </div>
                     </div>
                   ) : null}
-                  {looksLikeValidEmail(contactEmailTrimmed) ? (
-                    <div className="mb-callout mb-callout-c" style={{ marginBottom: 18 }} role="note">
-                      <span className="mb-callout-icon">🔗</span>
-                      <div className="mb-callout-text">
-                        This step adds <code style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 13 }}>?{GHL_UPLOAD_FORM_EMAIL_PARAM}=…</code> to <strong>this page&apos;s address bar</strong> on purpose — LeadConnector&apos;s embed script passes host URL parameters into the uploader. If CRM still shows a blank email on the submission, edit the GHL form and set the Email field to <strong>visible</strong> (URL prefill often skips hidden fields).
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
                 <div className="mb-ghl-wrap">
                   <iframe
@@ -965,10 +963,20 @@ export default function MaverickBrobotForm() {
                   />
                 </div>
                 <div className="mb-card-body">
+                  <div className="mb-checks" style={{ marginBottom: 16 }}>
+                    <label className="mb-check">
+                      <input
+                        type="checkbox"
+                        checked={confirmUploadsDone}
+                        onChange={e => setConfirmUploadsDone(e.target.checked)}
+                      />
+                      <span>I have finished submitting documents in the uploader above and see Upload complete.</span>
+                    </label>
+                  </div>
                   <div className="mb-callout mb-callout-c" style={{ marginTop: 0 }}>
                     <span className="mb-callout-icon">💡</span>
                     <div className="mb-callout-text">
-                      <strong>Finish the uploader inside the frame.</strong> After you attach PDFs, click <strong>Submit</strong> (or <strong>Continue</strong>) <em>in the form above</em> so HighLevel saves the file to this contact. The <strong>Submit Deal</strong> button below only sends the deal to Brobot—it does not submit the GHL upload form.
+                      <strong>Submit your uploads in the form above first</strong>—add each file and complete that form (Upload / Submit) <em>before</em> you tap <strong>Submit Deal to Brobot</strong> below. The Brobot button only sends the deal; it does not submit the document uploader.
                     </div>
                   </div>
                 </div>
@@ -980,7 +988,13 @@ export default function MaverickBrobotForm() {
                   </div>
                 ) : null}
                 <button type="button" className="mb-btn-ghost" onClick={goPrev} disabled={submitLoading}>← Back</button>
-                <button type="button" className="mb-btn-submit" onClick={handleSubmit} disabled={submitLoading}>
+                <button
+                  type="button"
+                  className="mb-btn-submit"
+                  onClick={handleSubmit}
+                  disabled={submitLoading || !confirmUploadsDone}
+                  title={!confirmUploadsDone ? "Confirm you finished the uploader above" : undefined}
+                >
                   {submitLoading ? "Sending…" : "Submit Deal to Brobot ⚡"}
                 </button>
               </div>
