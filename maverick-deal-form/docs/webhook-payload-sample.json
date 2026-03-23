@@ -16,25 +16,29 @@
   },
   "products": [
     {
-      "productId": "brobot-one",
-      "productLabel": "Brobot One (voice, messaging & CRM)",
+      "productId": "brobot-one-core",
+      "productLabel": "Brobot One Core",
       "customLabel": "",
-      "monthlyAmount": "299",
-      "setupFee": "500",
+      "monthlyAmount": "297",
+      "setupFee": "",
       "contractTermMonths": "36"
     }
   ],
-  "productsJson": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
-  "productsText": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
-  "products.json": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
-  "products.text": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
+  "productsJson": "[{\"productId\":\"brobot-one-core\",\"productLabel\":\"Brobot One Core\",\"customLabel\":\"\",\"monthlyAmount\":\"297\",\"setupFee\":\"\",\"contractTermMonths\":\"36\"}]",
+  "productsText": "Brobot One Core | MRC 297 | Setup  | 36 mo",
+  "products.json": "[{\"productId\":\"brobot-one-core\",\"productLabel\":\"Brobot One Core\",\"customLabel\":\"\",\"monthlyAmount\":\"297\",\"setupFee\":\"\",\"contractTermMonths\":\"36\"}]",
+  "products.text": "Brobot One Core | MRC 297 | Setup  | 36 mo",
   "meta": {
-    "products.json": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
-    "products.text": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo"
+    "products.json": "[{\"productId\":\"brobot-one-core\",\"productLabel\":\"Brobot One Core\",\"customLabel\":\"\",\"monthlyAmount\":\"297\",\"setupFee\":\"\",\"contractTermMonths\":\"36\"}]",
+    "products.text": "Brobot One Core | MRC 297 | Setup  | 36 mo"
+  },
+  "productLines": {
+    "json": "[{\"productId\":\"brobot-one-core\",\"productLabel\":\"Brobot One Core\",\"customLabel\":\"\",\"monthlyAmount\":\"297\",\"setupFee\":\"\",\"contractTermMonths\":\"36\"}]",
+    "text": "Brobot One Core | MRC 297 | Setup  | 36 mo"
   },
   "totals": {
-    "expectedMonthlyBilling": 299,
-    "totalSetupFees": 500
+    "expectedMonthlyBilling": 297,
+    "totalSetupFees": 0
   },
   "billing": {
     "saleDate": "2026-03-20",

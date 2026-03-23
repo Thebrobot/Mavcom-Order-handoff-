@@ -316,15 +316,35 @@ const STYLES = `
 const STEPS = ["Client", "Deal", "Billing", "Rep", "Files"];
 const INDUSTRIES = ["Select industry…","Healthcare","Legal / Law Firm","Real Estate","Home Services","Restaurant / Food & Bev","Retail / eCommerce","Automotive","Financial Services","Professional Services","Nonprofit","Other"];
 
+/** Recurring commission catalog — default MRC matches sheet (display price). */
 const PRODUCT_OPTIONS = [
   { value: "", label: "Select product…" },
-  { value: "brobot-one", label: "Brobot One (voice, messaging & CRM)" },
-  { value: "brobot-voice", label: "Brobot Voice / VoIP only" },
-  { value: "brobot-crm", label: "Brobot CRM / automation add-on" },
-  { value: "porting", label: "Number porting / carrier services" },
-  { value: "professional-services", label: "Professional services / project" },
+  { value: "brobot-one-core", label: "Brobot One Core" },
+  { value: "brobot-one-basic", label: "Brobot One Basic" },
+  { value: "ai-receptionist-priority", label: "AI Receptionist ⚡PRIORITY" },
+  { value: "ai-growth-priority", label: "AI Growth ⚡PRIORITY" },
+  { value: "additional-numbers", label: "Additional Numbers" },
+  { value: "revubro-starter", label: "RevuBro Starter" },
+  { value: "revubro-growth", label: "RevuBro Growth" },
+  { value: "revubro-pro", label: "RevuBro Pro" },
+  { value: "imapspro", label: "iMapsPro" },
+  { value: "bot-only-ai-priority", label: "Bot-Only AI ⚡PRIORITY" },
   { value: "other", label: "Other — custom product" },
 ];
+
+/** Prefills monthly amount when a catalog line is chosen (rep can override). */
+const PRODUCT_DEFAULT_MRC = {
+  "brobot-one-core": "297",
+  "brobot-one-basic": "129.99",
+  "ai-receptionist-priority": "497",
+  "ai-growth-priority": "697",
+  "additional-numbers": "25",
+  "revubro-starter": "97",
+  "revubro-growth": "197",
+  "revubro-pro": "297",
+  imapspro: "25",
+  "bot-only-ai-priority": "499",
+};
 
 function parseMoney(raw) {
   if (raw == null) return NaN;
@@ -389,6 +409,10 @@ function buildWebhookPayload(form, dealLineSummaries) {
     meta: {
       "products.json": productsJsonStr,
       "products.text": productsLinesText,
+    },
+    productLines: {
+      json: productsJsonStr,
+      text: productsLinesText,
     },
     totals: {
       expectedMonthlyBilling: dealLineSummaries.sumMrc,
@@ -654,7 +678,7 @@ export default function MaverickBrobotForm() {
                 </div>
                 <div className="mb-card-body">
                   <p className="mb-deal-step-hint">
-                    <strong>One row per product or service.</strong> On each line, choose the product, then enter monthly amount, any one-time setup fee for that line, and contract term in months. Multiple products? Use <strong>Add line</strong> for each.
+                    <strong>One row per product or service.</strong> Choosing a catalog product fills the default commissionable MRR; adjust if the deal differs (e.g. Brobot One Basic override, per-unit lines). Add setup and term per line. Use <strong>Add line</strong> for multiple products.
                   </p>
                   {form.products.map((p, i) => (
                     <div className="mb-prod-row" key={i}>
@@ -665,12 +689,14 @@ export default function MaverickBrobotForm() {
                           value={p.productId}
                           onChange={e => {
                             const v = e.target.value;
+                            const defaultMrc = v ? PRODUCT_DEFAULT_MRC[v] : undefined;
                             setForm(f => {
                               const rows = [...f.products];
                               rows[i] = {
                                 ...rows[i],
                                 productId: v,
                                 customLabel: v === "other" ? rows[i].customLabel : "",
+                                mrc: defaultMrc !== undefined ? defaultMrc : rows[i].mrc,
                               };
                               return { ...f, products: rows };
                             });

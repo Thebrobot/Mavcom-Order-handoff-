@@ -2,28 +2,29 @@
 
 The webhook sends **`products`** (an array of objects). If you map that to a **text** custom field, GHL shows **`[object Object],[object Object]`** — that is expected.
 
-Use a **string** field instead. The app sends the same data in several shapes:
+## Do **not** use this (wrong)
+
+`{{inboundWebhookRequest.products.text}}`
+
+That means: **`products`** (the **array**) → **`.text`**. The array has no `text` property, so this is **not** the same as the string key `"products.text"`.
+
+## Easiest (nested object — normal dots work)
+
+| Merge tag | Contents |
+|-----------|----------|
+| `{{inboundWebhookRequest.productLines.json}}` | JSON string — use for **Mavcom Products JSON** |
+| `{{inboundWebhookRequest.productLines.text}}` | Plain-text lines (human-readable) |
+
+## Other paths (same data)
 
 | Payload path | What it is |
 |--------------|------------|
-| `productsJson` | JSON string (camelCase) |
-| `productsText` | Plain-text lines (camelCase) |
-| `products.json` | Same JSON string — **dot-style key** (use bracket syntax in merge tags below) |
-| `products.text` | Same plain text — dot-style key |
-| `meta.products.json` | Same JSON under **`meta`** |
-| `meta.products.text` | Same plain text under **`meta`** |
+| `productsJson` | JSON string |
+| `productsText` | Plain-text lines |
+| `products.json` / `products.text` | Same strings; keys with a **dot in the name** need **brackets**: `{{inboundWebhookRequest['products.json']}}` |
+| `meta['products.json']` | Same under **`meta`** |
 
-Keys with a **dot** in the name are not the same as `products` + nested object — they are single string keys named `"products.json"` and `"products.text"`.
-
-## Merge tags (type manually if needed)
-
-Dot keys often need **bracket notation**:
-
-- `{{inboundWebhookRequest['products.json']}}`
-- `{{inboundWebhookRequest['products.text']}}`
-- `{{inboundWebhookRequest.meta['products.json']}}`
-
-CamelCase (no brackets):
+CamelCase:
 
 - `{{inboundWebhookRequest.productsJson}}`
 - `{{inboundWebhookRequest.productsText}}`
@@ -31,7 +32,7 @@ CamelCase (no brackets):
 ## What to do
 
 1. **Do not** map **`inboundWebhookRequest.products`** to **Mavcom Products JSON**.
-2. Map one of the string paths above (start with **`productsJson`** or **`['products.json']`**).
+2. Map one of the string paths above (start with **`productLines.json`** for JSON, or **`productsJson`**).
 3. **Publish** the workflow.
 4. Confirm **Vercel** has the latest build, then submit a **new** test.
 
