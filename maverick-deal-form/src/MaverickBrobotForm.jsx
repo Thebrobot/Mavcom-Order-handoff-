@@ -196,9 +196,9 @@ const STYLES = `
     border: none;
     outline: none;
     background: #111827;
-    /* Extra height so the iframe form can grow after uploads without clipping the bottom / upload UI */
-    height: 720px;
-    margin-bottom: 24px;
+    /* Slightly taller than 580px default so post-upload rows don’t clip; scroll if needed */
+    height: 620px;
+    margin-bottom: 12px;
     line-height: 0;
   }
   .mb-ghl-wrap iframe {
@@ -206,7 +206,7 @@ const STYLES = `
     top: -16px;
     left: -24px;
     width: calc(100% + 24px + 28px);
-    height: calc(100% + 56px);
+    height: calc(100% + 40px);
     display: block;
     border: 0 !important;
     outline: none !important;
@@ -863,7 +863,7 @@ export default function MaverickBrobotForm() {
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
                     data-form-name={"Porting Form\u00a0"}
-                    data-height="680"
+                    data-height="600"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
                     title={"Porting Form\u00a0"}
