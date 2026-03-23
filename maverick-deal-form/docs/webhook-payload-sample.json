@@ -25,6 +25,7 @@
     }
   ],
   "productsJson": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
+  "productsText": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
   "totals": {
     "expectedMonthlyBilling": 299,
     "totalSetupFees": 500

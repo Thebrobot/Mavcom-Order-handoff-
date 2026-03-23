@@ -95,7 +95,11 @@ Use **Update Contact** / **Set custom field** actions. Map **from JSON** → **t
 | `submittedAt` | Mavcom Submitted At | Text |
 | `productsJson` | Mavcom Products JSON | **Large text** — the app sends this as a **string** (use this path, not raw `products`) |
 
-**Products:** The payload includes **`products`** (array) and **`productsJson`** (same data as a JSON string). Map **`productsJson`** → **Mavcom Products JSON** in GHL (e.g. `{{inboundWebhookRequest.productsJson}}`) to avoid `[object Object]`.
+**Products:** The payload includes **`products`** (array), **`productsJson`** (JSON string), and **`productsText`** (plain-text lines). For **Mavcom Products JSON**:
+
+1. Set the value to **only** `{{inboundWebhookRequest.productsJson}}` — **do not** include `products` or any other merge tag in that same field.
+2. If you still see **`[object Object]`**, you are still mapping the **`products`** array, or the workflow wasn’t published / the site wasn’t rebuilt after the app update.
+3. **Fallback:** Map **`{{inboundWebhookRequest.productsText}}`** to a Large Text field (or temporarily to Mavcom Products JSON) — it is always plain text, never objects.
 
 Optional: add a **Note** (B7) with human-readable line items from `products[]`.
 
@@ -186,6 +190,7 @@ The app posts from the browser. If blocked:
     }
   ],
   "productsJson": "[{\"productId\":\"brobot-one\",\"productLabel\":\"Brobot One (voice, messaging & CRM)\",\"customLabel\":\"\",\"monthlyAmount\":\"299\",\"setupFee\":\"500\",\"contractTermMonths\":\"36\"}]",
+  "productsText": "Brobot One (voice, messaging & CRM) | MRC 299 | Setup 500 | 36 mo",
   "totals": {
     "expectedMonthlyBilling": 299,
     "totalSetupFees": 500
@@ -231,7 +236,8 @@ The app posts from the browser. If blocked:
 | `business.website` | string |
 | `business.phone` | string |
 | `products` | array |
-| `productsJson` | string (JSON text of line items — use for Mavcom Products JSON) |
+| `productsJson` | string (JSON text — map this to Mavcom Products JSON, **not** `products`) |
+| `productsText` | string (plain-text lines — fallback if JSON mapping fails) |
 | `totals.expectedMonthlyBilling` | number |
 | `totals.totalSetupFees` | number |
 | `billing.saleDate` | string (YYYY-MM-DD) |

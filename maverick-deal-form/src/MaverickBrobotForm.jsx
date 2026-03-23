@@ -368,8 +368,18 @@ function buildWebhookPayload(form, dealLineSummaries) {
       phone: form.biz_phone,
     },
     products: productsDetailed,
-    /** JSON string of line items — map `productsJson` in GHL to Mavcom Products JSON (avoids [object Object] from raw `products`). */
+    /** JSON string of line items — in GHL map ONLY this to Mavcom Products JSON (not `products`). */
     productsJson: JSON.stringify(productsDetailed),
+    /** Plain-text lines — use if GHL still coerces `productsJson`; map `productsText` to a Large Text field. */
+    productsText: productsDetailed
+      .map((line) => {
+        const name =
+          line.customLabel && String(line.customLabel).trim()
+            ? line.customLabel
+            : line.productLabel || line.productId || "Product";
+        return `${name} | MRC ${line.monthlyAmount} | Setup ${line.setupFee} | ${line.contractTermMonths} mo`;
+      })
+      .join("\n"),
     totals: {
       expectedMonthlyBilling: dealLineSummaries.sumMrc,
       totalSetupFees: dealLineSummaries.sumSetup,
