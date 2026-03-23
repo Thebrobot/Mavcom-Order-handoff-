@@ -62,7 +62,7 @@ const STYLES = `
 
   /* FIELD */
   .mb-field { display: flex; flex-direction: column; gap: 5px; }
-  .mb-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; }
+  .mb-label { font-family: 'Barlow', sans-serif; font-size: 15px; font-weight: 600; text-transform: none; letter-spacing: 0.01em; color: #000000; }
   .mb-label .req { color: #d97706; margin-left: 2px; }
   .mb-input { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 11px 14px; font-family: 'Barlow', sans-serif; font-size: 16px; color: #0f172a; outline: none; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
   .mb-input::placeholder { color: #94a3b8; font-size: 15px; }
@@ -95,7 +95,7 @@ const STYLES = `
   /* PRODUCT ROWS */
   .mb-prod-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
   .mb-prod-col { display: flex; flex-direction: column; gap: 4px; }
-  .mb-prod-col-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+  .mb-prod-col-label { font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0.01em; color: #000000; }
   .mb-prod-input { background: transparent; border: none; border-bottom: 1px solid #cbd5e1; border-radius: 0; padding: 4px 2px; font-size: 15px; color: #0f172a; outline: none; font-family: 'Barlow', sans-serif; width: 100%; transition: border-color 0.2s; }
   .mb-prod-input::placeholder { color: #94a3b8; font-size: 14px; }
   .mb-card-deal-lines .mb-prod-row {
@@ -109,7 +109,7 @@ const STYLES = `
   .mb-card-deal-lines .mb-remove-btn { margin-top: 26px; flex-shrink: 0; }
   .mb-card-deal-lines .mb-prod-col-product .mb-select { width: 100%; font-size: 16px; }
   .mb-card-deal-lines .mb-prod-other-input { margin-top: 10px; width: 100%; }
-  .mb-card-deal-lines .mb-prod-col-label { font-size: 11px; letter-spacing: 0.1em; color: #475569; }
+  .mb-card-deal-lines .mb-prod-col-label { font-size: 14px; font-weight: 600; letter-spacing: 0.01em; color: #000000; }
   .mb-card-deal-lines .mb-prod-input { font-size: 16px; padding: 8px 4px; border-bottom-width: 2px; }
   .mb-card-deal-lines .mb-prod-input::placeholder { font-size: 14px; color: #94a3b8; }
   .mb-deal-step-hint { font-size: 16px; color: #475569; line-height: 1.7; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
@@ -143,11 +143,12 @@ const STYLES = `
     background: linear-gradient(145deg, rgba(56,189,248,0.1), rgba(255,255,255,0.9));
   }
   .mb-deal-summary-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #64748b;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: #000000;
     margin-bottom: 10px;
   }
   .mb-deal-summary-value {
@@ -164,7 +165,7 @@ const STYLES = `
   .mb-billing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
   .mb-billing-card { padding: 14px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .mb-billing-card.selected { border-color: #f5a623; background: rgba(245,166,35,0.08); box-shadow: 0 0 0 1px rgba(245,166,35,0.1); }
-  .mb-billing-title { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; transition: color 0.2s; margin-bottom: 3px; }
+  .mb-billing-title { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #000000; transition: color 0.2s; margin-bottom: 3px; }
   .mb-billing-card.selected .mb-billing-title { color: #d97706; }
   .mb-billing-sub { font-size: 13px; color: #64748b; line-height: 1.45; transition: color 0.2s; }
   .mb-billing-card.selected .mb-billing-sub { color: #92400e; }
@@ -182,7 +183,7 @@ const STYLES = `
   .mb-checks { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
   .mb-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
   .mb-check input { width: 18px; height: 18px; min-width: 18px; margin-top: 2px; accent-color: #f5a623; cursor: pointer; }
-  .mb-check span { font-size: 15px; color: #334155; line-height: 1.55; }
+  .mb-check span { font-size: 15px; font-weight: 500; color: #000000; line-height: 1.55; }
 
   /* GHL EMBED */
   .mb-card-upload-embed { border: none; }
