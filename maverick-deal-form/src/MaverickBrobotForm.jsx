@@ -197,7 +197,7 @@ const STYLES = `
     border: 1px solid #e2e8f0;
     border-radius: 3px;
     isolation: isolate;
-    height: 593px;
+    height: 540px;
     margin-bottom: 12px;
     line-height: 0;
   }
@@ -858,7 +858,7 @@ export default function MaverickBrobotForm() {
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
                     data-form-name={"Porting Form\u00a0"}
-                    data-height="593"
+                    data-height="540"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
                     title={"Porting Form\u00a0"}
