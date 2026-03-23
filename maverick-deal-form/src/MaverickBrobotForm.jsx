@@ -196,24 +196,20 @@ const STYLES = `
     border: none;
     outline: none;
     background: #111827;
-    /* Slightly taller than 580px default so post-upload rows don’t clip; scroll if needed */
-    height: 620px;
+    /* Matches data-height on iframe; extra scroll if embed grows after upload */
+    height: 593px;
     margin-bottom: 12px;
     line-height: 0;
   }
   .mb-ghl-wrap iframe {
-    position: absolute;
-    top: -16px;
-    left: -24px;
-    width: calc(100% + 24px + 28px);
-    height: calc(100% + 40px);
     display: block;
-    border: 0 !important;
-    outline: none !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: none;
+    width: 100%;
+    height: 100%;
+    border: none !important;
+    border-radius: 3px;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
   }
 
   /* NAV */
@@ -844,16 +840,11 @@ export default function MaverickBrobotForm() {
                   <iframe
                     src="https://api.leadconnectorhq.com/widget/form/H8C5vTrJlfHah3Evz0cR"
                     style={{
+                      width: "100%",
+                      height: "100%",
                       border: "none",
-                      outline: "none",
-                      boxShadow: "none",
-                      margin: 0,
-                      padding: 0,
-                      display: "block",
-                      borderRadius: 0,
+                      borderRadius: "3px",
                     }}
-                    frameBorder={0}
-                    loading="eager"
                     id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-layout="{'id':'INLINE'}"
                     data-trigger-type="alwaysShow"
@@ -863,7 +854,7 @@ export default function MaverickBrobotForm() {
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
                     data-form-name={"Porting Form\u00a0"}
-                    data-height="600"
+                    data-height="593"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
                     title={"Porting Form\u00a0"}
