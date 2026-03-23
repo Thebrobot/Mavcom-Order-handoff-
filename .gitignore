@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+maverick-deal-form/node_modules/
+
+# Build output
+dist/
+maverick-deal-form/dist/
+
+# Env (secrets — use .env.example as template)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Logs & OS
+*.log
+.DS_Store

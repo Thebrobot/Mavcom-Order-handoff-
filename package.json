@@ -1,0 +1,9 @@
+{
+  "name": "mav-order-hand-off",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix maverick-deal-form",
+    "build": "npm run build --prefix maverick-deal-form",
+    "preview": "npm run preview --prefix maverick-deal-form"
+  }
+}
