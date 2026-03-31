@@ -1,8 +1,8 @@
-# Mavcom deal form → HighLevel: runbook
+# Deal submission form → HighLevel: runbook
 
 Use this checklist so webhook submissions, contacts, and custom fields stay reliable when multiple reps use the tool.
 
-**Phase B (step-by-step workflow build):** see **`docs/PHASE-B-WEBHOOK-WORKFLOW.md`** — company → contact → link → Mavcom fields → note → tags → notify, plus sample JSON for testing.
+**Phase B (step-by-step workflow build):** see **`docs/PHASE-B-WEBHOOK-WORKFLOW.md`** — company → contact → link → Deal fields → note → tags → notify, plus sample JSON for testing.
 
 ---
 
@@ -21,7 +21,7 @@ Use this checklist so webhook submissions, contacts, and custom fields stay reli
 
 ## 2. Create custom fields first (before building the workflow)
 
-In **Settings → Custom Fields** (Contacts), create fields you will map from the webhook. **Suggested Contact field labels:** see **`docs/CUSTOM-FIELDS.md`** (prefix **`Mavcom `**, no dash).
+In **Settings → Custom Fields** (Contacts), create fields you will map from the webhook. **Suggested Contact field labels:** see **`docs/CUSTOM-FIELDS.md`** (prefix **`Deal `**, no dash).
 
 **Suggested minimum (examples; adjust labels to your org):**
 
@@ -80,7 +80,7 @@ If validation fails → **internal notification** (Slack/email) with raw payload
 ### Step B — Find or create contact
 
 - **Lookup** contact by **email** (`contact.email`).
-- **If found:** update contact (and optionally **add note** “New Mavcom deal submission” + timestamp).
+- **If found:** update contact (and optionally **add note** “New Deal deal submission” + timestamp).
 - **If not found:** **Create contact** with:
   - First name, last name, phone, email from `contact.*`
   - Business name / company as per your GHL setup
@@ -99,16 +99,16 @@ If your builder only flattens **one level**, use **Custom Code** or **Formatter*
 
 **Option 1 (simplest):** Add a **Note** on the contact:
 
-- Title: `Mavcom deal line items`
+- Title: `Deal deal line items`
 - Body: loop `products[]` and print each line: `productLabel`, `customLabel`, `monthlyAmount`, `setupFee`, `contractTermMonths`
 
-**Option 2:** Map **`productsJson`** from the webhook into **Mavcom Products JSON** (the app sends this as a string; do not map raw `products` to a text field).
+**Option 2:** Map **`productsJson`** from the webhook into **Deal Products JSON** (the app sends this as a string; do not map raw `products` to a text field).
 
 **Option 3:** **Opportunity** pipeline — create/update opportunity per deal with amount = `totals.expectedMonthlyBilling` or custom logic (requires pipeline design).
 
 ### Step E — Tagging & pipeline
 
-- Add tags: e.g. `Mavcom Deal submitted`, `Source Mavcom form` (`source` from payload is `maverick-deal-form`).
+- Add tags: e.g. `Deal submitted`, `Source deal form` (`source` from payload is `deal-submission-form`).
 - Move **Opportunity** or trigger **internal workflow** for fulfillment.
 
 ### Step F — Notifications
@@ -128,7 +128,7 @@ If any step fails:
 
 Top-level keys:
 
-- `source` — always `"maverick-deal-form"`
+- `source` — always `"deal-submission-form"`
 - `submittedAt` — ISO timestamp
 - `contact` — `firstName`, `lastName`, `phone`, `email`
 - `business` — `legalName`, `address`, `industry`, `website`, `phone`
@@ -172,7 +172,7 @@ Browsers may block `fetch` to `leadconnectorhq.com` from your domain.
 ## 9. App configuration (recap)
 
 ```bash
-# maverick-deal-form/.env
+# deal-form/.env
 VITE_SUBMIT_WEBHOOK_URL=https://services.leadconnectorhq.com/hooks/...
 ```
 

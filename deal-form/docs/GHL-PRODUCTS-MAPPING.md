@@ -12,7 +12,7 @@ That means: **`products`** (the **array**) → **`.text`**. The array has no `te
 
 | Merge tag | Contents |
 |-----------|----------|
-| `{{inboundWebhookRequest.productLines.json}}` | JSON string — use for **Mavcom Products JSON** |
+| `{{inboundWebhookRequest.productLines.json}}` | JSON string — use for **Deal Products JSON** |
 | `{{inboundWebhookRequest.productLines.text}}` | Plain-text lines (human-readable) |
 
 ## Other paths (same data)
@@ -31,7 +31,7 @@ CamelCase:
 
 ## What to do
 
-1. **Do not** map **`inboundWebhookRequest.products`** to **Mavcom Products JSON**.
+1. **Do not** map **`inboundWebhookRequest.products`** to **Deal Products JSON**.
 2. Map one of the string paths above (start with **`productLines.json`** for JSON, or **`productsJson`**).
 3. **Publish** the workflow.
 4. Confirm **Vercel** has the latest build, then submit a **new** test.

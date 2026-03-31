@@ -397,7 +397,7 @@ function buildWebhookPayload(form, dealLineSummaries) {
     .join("\n");
 
   return {
-    source: "maverick-deal-form",
+    source: "deal-submission-form",
     submittedAt: new Date().toISOString(),
     contact: {
       firstName: form.contact_first,
@@ -413,7 +413,7 @@ function buildWebhookPayload(form, dealLineSummaries) {
       phone: form.biz_phone,
     },
     products: productsDetailed,
-    /** JSON string — map to Mavcom Products JSON (not raw `products`). */
+    /** JSON string — map to CRM “Products JSON” field (not raw `products`). */
     productsJson: productsJsonStr,
     /** Plain-text lines — cannot become [object Object]. */
     productsText: productsLinesText,
@@ -457,7 +457,7 @@ function buildWebhookPayload(form, dealLineSummaries) {
 
 const today = new Date().toISOString().split("T")[0];
 
-export default function MaverickBrobotForm() {
+export default function DealSubmissionForm() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -611,12 +611,12 @@ export default function MaverickBrobotForm() {
           {/* HEADER */}
           <div className="mb-header">
             <div className="mb-badge">
-              <span className="mb-pill mb-pill-m">Maverick</span>
+              <span className="mb-pill mb-pill-m">All-in deal</span>
               <span className="mb-pill mb-pill-x">×</span>
               <span className="mb-pill mb-pill-b">Brobot</span>
             </div>
             <h1 className="mb-h1">New Client<br /><em>Deal Submission</em></h1>
-            <p className="mb-sub">Complete within 24 hours of close. Submit to Brobot for account activation.</p>
+            <p className="mb-sub">Complete within 24 hours of close. One form for the full handoff—submit to Brobot for account activation.</p>
             <div className="mb-rule" />
           </div>
 
@@ -871,12 +871,12 @@ export default function MaverickBrobotForm() {
                 <div className="mb-card-body">
                   <div className="mb-g2">
                     <div className="mb-field">
-                      <label className="mb-label">Maverick Rep Full Name <span className="req">*</span></label>
+                      <label className="mb-label">Sales rep full name <span className="req">*</span></label>
                       <input className="mb-input" value={form.rep_name} onChange={e => set("rep_name", e.target.value)} placeholder="First Last" />
                     </div>
                     <div className="mb-field">
-                      <label className="mb-label">Maverick Rep Email <span className="req">*</span></label>
-                      <input className="mb-input" value={form.rep_email} onChange={e => set("rep_email", e.target.value)} placeholder="rep@maverickcomm.com" />
+                      <label className="mb-label">Sales rep email <span className="req">*</span></label>
+                      <input className="mb-input" value={form.rep_email} onChange={e => set("rep_email", e.target.value)} placeholder="you@company.com" />
                     </div>
                     <div className="mb-field">
                       <label className="mb-label">Agreement Signed Date <span className="req">*</span></label>

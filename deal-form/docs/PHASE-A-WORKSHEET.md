@@ -6,7 +6,7 @@ Complete this in order. Check boxes when done.
 
 ## A1 — Confirm where this lives
 
-- [ ] I am in the correct **HighLevel sub-account (Location)** where Mavcom deals should land.
+- [ ] I am in the correct **HighLevel sub-account (Location)** where Deal deals should land.
 - [ ] I have **admin or settings** access to create **Custom Fields** and **Workflows**.
 
 **Location name (write it here):** _________________________________
@@ -50,22 +50,22 @@ In your workflow you will map these to **built-in** Contact fields:
 
 **Path:** `Settings` → `Custom Fields` → select **Contact** → `Add Field`
 
-Create **only** what you need for reporting and handoffs. Use the **`Mavcom `** prefix (space after Mavcom, no dash). Full list: **`docs/CUSTOM-FIELDS.md`**.
+Create **only** what you need for reporting and handoffs. Use the **`Deal `** prefix (space after Deal, no dash). Full list: **`docs/CUSTOM-FIELDS.md`**.
 
 Legacy optional rows if you are **not** using native Company fields (usually skip):
 
 | # | Field name (label in GHL) | Type | Filled from webhook (path) |
 |---|---------------------------|------|------------------------------|
-| 1 | Mavcom Legal business name | Text | `business.legalName` *(skip if using Company Name only)* |
-| 2 | Mavcom Full address | Large Text | `business.address` |
-| 3 | Mavcom Industry | Text | `business.industry` |
-| 4 | Mavcom Business website | Text | `business.website` |
-| 5 | Mavcom Main business phone | Phone | `business.phone` |
+| 1 | Deal Legal business name | Text | `business.legalName` *(skip if using Company Name only)* |
+| 2 | Deal Full address | Large Text | `business.address` |
+| 3 | Deal Industry | Text | `business.industry` |
+| 4 | Deal Business website | Text | `business.website` |
+| 5 | Deal Main business phone | Phone | `business.phone` |
 
 **Confirmations** (`confirmations.*` booleans) — either:
 
 - [ ] Three **checkbox** custom fields (see `CUSTOM-FIELDS.md`), **or**
-- [ ] One **Large text** field **Mavcom Confirmations** with Yes/No per line from workflow.
+- [ ] One **Large text** field **Deal Confirmations** with Yes/No per line from workflow.
 
 - [ ] All fields above that you need are **created** in GHL.
 
@@ -93,8 +93,8 @@ Decide tags to apply on successful webhook (you’ll add these in Phase B).
 
 Suggested:
 
-- `Mavcom Deal submitted`
-- `Source Mavcom form`
+- `Deal submitted`
+- `Source Deal form`
 
 **Your tags:**
 

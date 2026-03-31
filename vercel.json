@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm install --prefix maverick-deal-form",
-  "buildCommand": "npm run build --prefix maverick-deal-form",
-  "outputDirectory": "maverick-deal-form/dist"
+  "installCommand": "npm install --prefix deal-form",
+  "buildCommand": "npm run build --prefix deal-form",
+  "outputDirectory": "deal-form/dist"
 }

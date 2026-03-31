@@ -1,6 +1,6 @@
 # Phase B — Build the Inbound Webhook workflow (step-by-step)
 
-Follow in order. Your **Contact** custom fields use liquid keys like `{{ contact.mavcom_sale_date }}` — in **workflow actions**, map from the **inbound JSON** paths below (GHL may show them as `body.contact.email`, `data.contact.email`, or similar — **use whatever your trigger exposes** after you run a test).
+Follow in order. Your **Contact** custom fields use liquid keys like `{{ contact.deal_sale_date }}` — in **workflow actions**, map from the **inbound JSON** paths below (GHL may show them as `body.contact.email`, `data.contact.email`, or similar — **use whatever your trigger exposes** after you run a test).
 
 ---
 
@@ -8,7 +8,7 @@ Follow in order. Your **Contact** custom fields use liquid keys like `{{ contact
 
 1. In **Automations → Workflows**, create a new workflow.
 2. Trigger: **Inbound Webhook** → **Generate / copy URL**.
-3. In your project, **`maverick-deal-form/.env`**:
+3. In your project, **`deal-form/.env`**:
    ```bash
    VITE_SUBMIT_WEBHOOK_URL=https://services.leadconnectorhq.com/hooks/...
    ```
@@ -29,7 +29,7 @@ Follow in order. Your **Contact** custom fields use liquid keys like `{{ contact
 Add a **Filter** or **If / Else** branch immediately after the trigger:
 
 - **Pass** if `contact.email` exists and contains `@` (using your trigger’s path).
-- **Fail** branch: internal notification (Slack/email) “Mavcom webhook validation failed” + include raw payload; **stop** or tag — do not create junk records.
+- **Fail** branch: internal notification (Slack/email) “Deal webhook validation failed” + include raw payload; **stop** or tag — do not create junk records.
 
 ---
 
@@ -72,34 +72,34 @@ Use your GHL action: **Associate contact to company** / **Add to company** / **S
 
 ---
 
-## B6 — Map Mavcom custom fields (Contact)
+## B6 — Map Deal custom fields (Contact)
 
-Use **Update Contact** / **Set custom field** actions. Map **from JSON** → **to your field** (internal keys are `mavcom_*` as in Custom Fields).
+Use **Update Contact** / **Set custom field** actions. Map **from JSON** → **to your field** (internal keys often use a `deal_*` or custom prefix as in Custom Fields).
 
 | JSON path | Your field (label) | Notes |
 |-----------|----------------------|--------|
-| `totals.expectedMonthlyBilling` | Mavcom Expected Monthly Billing | Number |
-| `totals.totalSetupFees` | Mavcom Total Setup Fees | Number |
-| `billing.saleDate` | Mavcom Sale Date | Date (ISO string from app) |
-| `billing.billingType` | Mavcom Billing Type | Text |
-| `billing.ccCollected` | Mavcom CC Collected | Text |
-| `billing.estimatedChargeDate` | Mavcom Est. First Charge Date | Date |
-| `rep.name` | Mavcom Rep Name | Text |
-| `rep.email` | Mavcom Rep Email | Text |
-| `agreement.signedDate` | Mavcom Agreement Signed Date | Date |
-| `agreement.serviceStartDate` | Mavcom Service Start Date | Date |
-| `notes` | Mavcom Deal Notes | Large text |
-| `confirmations.agreementSigned` | Mavcom Agreement Confirmed | Checkbox |
-| `confirmations.payment` | Mavcom Payment Confirmed | Checkbox |
-| `confirmations.onboarding` | Mavcom Onboarding Confirmed | Checkbox |
-| `submittedAt` | Mavcom Submitted At | Text |
-| `productsJson` | Mavcom Products JSON | **Large text** — the app sends this as a **string** (use this path, not raw `products`) |
+| `totals.expectedMonthlyBilling` | Deal Expected Monthly Billing | Number |
+| `totals.totalSetupFees` | Deal Total Setup Fees | Number |
+| `billing.saleDate` | Deal Sale Date | Date (ISO string from app) |
+| `billing.billingType` | Deal Billing Type | Text |
+| `billing.ccCollected` | Deal CC Collected | Text |
+| `billing.estimatedChargeDate` | Deal Est. First Charge Date | Date |
+| `rep.name` | Deal Rep Name | Text |
+| `rep.email` | Deal Rep Email | Text |
+| `agreement.signedDate` | Deal Agreement Signed Date | Date |
+| `agreement.serviceStartDate` | Deal Service Start Date | Date |
+| `notes` | Deal Notes | Large text |
+| `confirmations.agreementSigned` | Deal Agreement Confirmed | Checkbox |
+| `confirmations.payment` | Deal Payment Confirmed | Checkbox |
+| `confirmations.onboarding` | Deal Onboarding Confirmed | Checkbox |
+| `submittedAt` | Deal Submitted At | Text |
+| `productsJson` | Deal Products JSON | **Large text** — the app sends this as a **string** (use this path, not raw `products`) |
 
-**Products:** The payload includes **`products`** (array), **`productsJson`** (JSON string), and **`productsText`** (plain-text lines). For **Mavcom Products JSON**:
+**Products:** The payload includes **`products`** (array), **`productsJson`** (JSON string), and **`productsText`** (plain-text lines). For **Deal Products JSON**:
 
 1. Set the value to **only** `{{inboundWebhookRequest.productsJson}}` — **do not** include `products` or any other merge tag in that same field.
 2. If you still see **`[object Object]`**, you are still mapping the **`products`** array, or the workflow wasn’t published / the site wasn’t rebuilt after the app update.
-3. **Fallback:** Map **`{{inboundWebhookRequest.productsText}}`** to a Large Text field (or temporarily to Mavcom Products JSON) — it is always plain text, never objects.
+3. **Fallback:** Map **`{{inboundWebhookRequest.productsText}}`** to a Large Text field (or temporarily to Deal Products JSON) — it is always plain text, never objects.
 
 **Picker only lists `products`?** Type the merge tag manually — see **`docs/GHL-PRODUCTS-MAPPING.md`** (`productsJson`, `products.json`, `meta['products.json']`, etc.).
 
@@ -111,7 +111,7 @@ Optional: add a **Note** (B7) with human-readable line items from `products[]`.
 
 **Add Note** on the **Contact** (from B4):
 
-- **Title:** `Mavcom deal line items`
+- **Title:** `Deal deal line items`
 - **Body:** Loop `products[]` and print each line, e.g.  
   `productLabel` / `customLabel`, `monthlyAmount`, `setupFee`, `contractTermMonths`
 
@@ -121,10 +121,10 @@ Optional: add a **Note** (B7) with human-readable line items from `products[]`.
 
 Add tags, for example:
 
-- `Mavcom Deal submitted`
-- `Source Mavcom form`
+- `Deal submitted`
+- `Source Deal form`
 
-(Optionally tag with `source` value `maverick-deal-form` from JSON if you use tag automation.)
+(Optionally tag with `source` value `deal-submission-form` from JSON if you use tag automation.)
 
 ---
 
@@ -148,7 +148,7 @@ If any step fails, use workflow **error** or a parallel branch to notify ops. Ch
 
 1. Deploy site with **`VITE_SUBMIT_WEBHOOK_URL`** set.
 2. Submit the **full form** from the **live** URL with a **test** email.
-3. Confirm: Company, Contact, link, all Mavcom fields, note, tags.
+3. Confirm: Company, Contact, link, all Deal fields, note, tags.
 4. Submit **again** with the **same email** — confirm **update** behavior matches your Phase A rule.
 
 ---
@@ -166,7 +166,7 @@ The app posts from the browser. If blocked:
 
 ```json
 {
-  "source": "maverick-deal-form",
+  "source": "deal-submission-form",
   "submittedAt": "2026-03-23T14:00:00.000Z",
   "contact": {
     "firstName": "Jane",
@@ -248,7 +248,7 @@ The app posts from the browser. If blocked:
 | `business.website` | string |
 | `business.phone` | string |
 | `products` | array |
-| `productsJson` | string (JSON text — map to Mavcom Products JSON, **not** `products`) |
+| `productsJson` | string (JSON text — map to Deal Products JSON, **not** `products`) |
 | `productsText` | string (plain-text lines) |
 | `products.json` | same as `productsJson` (dot-style key; use bracket merge tags in GHL) |
 | `products.text` | same as `productsText` |
