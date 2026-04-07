@@ -1,6 +1,17 @@
 import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { PAYMENT_LINK_CATEGORIES, PAYMENT_PRICE_SUFFIX } from "./paymentLinks.js";
 
+/** When VITE_* is unset at build (e.g. missing in Vercel), still ship working links. Override via env. */
+const DEFAULT_VITE_LINK_AI_KNOWLEDGE =
+  "https://chatgpt.com/g/g-69bc504e1fd481918a7085d2fa5be02e-brobot-copilot";
+const DEFAULT_VITE_LINK_TERMS_LOA =
+  "https://sendlink.co/documents/doc-form/69d55a0573a84b21f006c71d?locale=en-US";
+
+function envUrl(v, fallback) {
+  const s = typeof v === "string" ? v.trim() : "";
+  return s || fallback;
+}
+
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -753,13 +764,12 @@ export default function DealSubmissionForm() {
   };
 
   const quickResourceLinks = useMemo(() => {
-    const pick = (key) => {
-      const v = import.meta.env[key];
-      return typeof v === "string" && v.trim() ? v.trim() : null;
-    };
+    // Static `import.meta.env.VITE_*` so Vite always inlines at build; dynamic `import.meta.env[key]` is brittle.
+    const ai = envUrl(import.meta.env.VITE_LINK_AI_KNOWLEDGE, DEFAULT_VITE_LINK_AI_KNOWLEDGE);
+    const terms = envUrl(import.meta.env.VITE_LINK_TERMS_LOA, DEFAULT_VITE_LINK_TERMS_LOA);
     return [
-      { key: "ai-knowledge", href: pick("VITE_LINK_AI_KNOWLEDGE"), label: "Brobot Copilot" },
-      { key: "terms-loa", href: pick("VITE_LINK_TERMS_LOA"), label: "Terms & LOA (e-sign)" },
+      { key: "ai-knowledge", href: ai, label: "Brobot Copilot" },
+      { key: "terms-loa", href: terms, label: "Terms & LOA (e-sign)" },
     ];
   }, []);
 
