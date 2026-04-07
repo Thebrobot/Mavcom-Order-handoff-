@@ -1,10 +1,13 @@
 import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { PAYMENT_LINK_CATEGORIES, PAYMENT_PRICE_SUFFIX } from "./paymentLinks.js";
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   .mb-wrap * { box-sizing: border-box; margin: 0; padding: 0; }
   .mb-wrap {
+    --mb-brobot-yellow: #f5a623;
+    --mb-brobot-on-yellow: #000000;
     background: #f1f5f9;
     min-height: 100vh;
     font-family: 'Barlow', sans-serif;
@@ -29,11 +32,179 @@ const STYLES = `
   .mb-pill { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 100px; }
   .mb-pill-m { background: #f1f5f9; color: #475569; }
   .mb-pill-x { color: #64748b; font-size: 14px; }
-  .mb-pill-b { background: #f5a623; color: #000; font-weight: 700; }
+  .mb-pill-b { background: var(--mb-brobot-yellow); color: var(--mb-brobot-on-yellow); font-weight: 700; }
   .mb-h1 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(32px, 7vw, 54px); font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1; color: #0f172a; margin-bottom: 10px; }
   .mb-h1 em { font-style: italic; color: #d97706; }
   .mb-sub { font-size: 15px; color: #475569; max-width: 460px; margin: 0 auto; line-height: 1.75; }
   .mb-rule { width: 56px; height: 2px; background: linear-gradient(90deg, #f5a623, #38bdf8); margin: 16px auto 0; border-radius: 2px; }
+
+  .mb-quick-links {
+    margin: 0 auto 28px;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.06);
+  }
+  .mb-quick-links-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .mb-payment-block { width: 100%; }
+  .mb-payment-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 12px;
+  }
+  .mb-payment-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px 16px;
+  }
+  .mb-payment-field { flex: 1 1 180px; min-width: 0; }
+  .mb-payment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    flex: 0 0 auto;
+    padding-bottom: 2px;
+  }
+  .mb-payment-plan-detail {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: linear-gradient(180deg, #fafbfc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+  }
+  .mb-payment-plan-detail-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    min-height: 0;
+  }
+  .mb-payment-plan-name {
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+    flex: 1 1 38%;
+    min-width: 140px;
+    padding: 0 10px 0 0;
+    border-right: 1px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+  }
+  .mb-payment-plan-price-wrap {
+    flex: 1 1 50%;
+    min-width: 120px;
+    padding: 0 0 0 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: right;
+  }
+  .mb-payment-plan-price-sentence {
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.3;
+    margin: 0;
+  }
+  .mb-payment-plan-price-sentence strong {
+    font-weight: 600;
+    color: #0f172a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+  }
+  .mb-payment-plan-price-unit {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+  }
+  .mb-payment-actions .mb-btn-primary,
+  .mb-payment-actions .mb-btn-ghost { padding: 11px 18px; font-size: 13px; }
+  .mb-payment-actions .mb-btn-primary:disabled,
+  .mb-payment-actions .mb-btn-ghost:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+  @media (max-width: 540px) {
+    .mb-payment-plan-detail-inner {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .mb-payment-plan-name {
+      border-right: none;
+      border-bottom: 1px solid #cbd5e1;
+      padding: 0 0 6px 0;
+    }
+    .mb-payment-plan-price-wrap {
+      align-items: flex-start;
+      text-align: left;
+      padding: 6px 0 0 0;
+      width: 100%;
+    }
+    .mb-payment-actions { width: 100%; justify-content: stretch; }
+    .mb-payment-actions .mb-btn-primary,
+    .mb-payment-actions .mb-btn-ghost { flex: 1 1 auto; justify-content: center; }
+  }
+  .mb-quick-links-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .mb-quick-links-pills .mb-quick-link-btn { flex: 1 1 140px; min-width: 0; }
+  /* Same chip colors as .mb-pill-b — fill/text also set inline so placeholders match Brobot */
+  .mb-quick-link-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(9px, 2.2vw, 13px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    padding: 14px 12px;
+    border-radius: 9999px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: filter 0.2s;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+  }
+  .mb-quick-link-btn:hover {
+    filter: brightness(1.06);
+  }
+  .mb-quick-link-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.45);
+  }
+  .mb-quick-link-btn--placeholder {
+    cursor: default;
+    border: 1px dashed rgba(0,0,0,0.28);
+  }
+  @media (max-width: 420px) {
+    .mb-quick-links { padding: 12px 12px; }
+    .mb-quick-link-btn { min-height: 44px; padding: 12px 6px; }
+  }
 
   /* PROGRESS */
   .mb-prog-wrap { margin-bottom: 32px; }
@@ -373,6 +544,14 @@ function formatUsd(n) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
+/** List prices in payment picker: whole dollars without “.00” (e.g. $335). */
+function formatListPriceUsd(n) {
+  if (!Number.isFinite(n)) return "—";
+  const r = Math.round(n);
+  if (Math.abs(n - r) < 1e-9) return `$${r}`;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
 function buildWebhookPayload(form, dealLineSummaries) {
   const productsDetailed = form.products.map(p => {
     const opt = PRODUCT_OPTIONS.find(o => o.value === p.productId);
@@ -463,6 +642,8 @@ export default function DealSubmissionForm() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [confirmUploadsDone, setConfirmUploadsDone] = useState(false);
+  const [paymentCategoryIndex, setPaymentCategoryIndex] = useState(0);
+  const [paymentLinkIndex, setPaymentLinkIndex] = useState(0);
 
   const [form, setForm] = useState({
     business_name: "", address: "", industry: "", website: "", biz_phone: "",
@@ -511,7 +692,7 @@ export default function DealSubmissionForm() {
       u.searchParams.set(GHL_UPLOAD_FORM_EMAIL_PARAM, contactEmailTrimmed);
       const q = u.searchParams.toString();
       window.history.replaceState(null, "", `${u.pathname}${q ? `?${q}` : ""}${u.hash}`);
-    } catch (_) {}
+    } catch { /* invalid URL */ }
   }, [step, contactEmailTrimmed]);
 
   useLayoutEffect(() => {
@@ -522,14 +703,65 @@ export default function DealSubmissionForm() {
       u.searchParams.delete(GHL_UPLOAD_FORM_EMAIL_PARAM);
       const q = u.searchParams.toString();
       window.history.replaceState(null, "", `${u.pathname}${q ? `?${q}` : ""}${u.hash}`);
-    } catch (_) {}
+    } catch { /* invalid URL */ }
   }, [step]);
 
   useEffect(() => {
     if (step !== 5) setConfirmUploadsDone(false);
   }, [step]);
 
+  useEffect(() => {
+    if (step !== 3) return;
+    setForm(f => {
+      if (f.billing_type === "") return { ...f, billing_type: "charge_today" };
+      return f;
+    });
+  }, [step]);
+
+  useEffect(() => {
+    setPaymentLinkIndex(0);
+  }, [paymentCategoryIndex]);
+
   const progFill = `${((step - 1) / (STEPS.length - 1)) * 100}%`;
+
+  const selectedPaymentLink =
+    PAYMENT_LINK_CATEGORIES[paymentCategoryIndex]?.links?.[paymentLinkIndex];
+  const selectedPaymentUrl = String(selectedPaymentLink?.url ?? "").trim();
+
+  const openPaymentLink = () => {
+    if (!selectedPaymentUrl) return;
+    window.open(selectedPaymentUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const copyPaymentLink = async () => {
+    if (!selectedPaymentUrl) return;
+    try {
+      await navigator.clipboard.writeText(selectedPaymentUrl);
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = selectedPaymentUrl;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch { /* execCommand unavailable */ }
+    }
+  };
+
+  const quickResourceLinks = useMemo(() => {
+    const pick = (key) => {
+      const v = import.meta.env[key];
+      return typeof v === "string" && v.trim() ? v.trim() : null;
+    };
+    return [
+      { key: "ai-knowledge", href: pick("VITE_LINK_AI_KNOWLEDGE"), label: "Brobot Copilot" },
+      { key: "terms-loa", href: pick("VITE_LINK_TERMS_LOA"), label: "Terms & LOA (e-sign)" },
+    ];
+  }, []);
 
   const goNext = () => { if (step < 5) setStep(s => s + 1); };
   const goPrev = () => { if (step > 1) setStep(s => s - 1); };
@@ -619,6 +851,108 @@ export default function DealSubmissionForm() {
             <p className="mb-sub">Complete within 24 hours of close. One form for the full handoff—submit to Brobot for account activation.</p>
             <div className="mb-rule" />
           </div>
+
+          <nav className="mb-quick-links" aria-label="Quick links">
+            <div className="mb-quick-links-grid">
+              <div className="mb-payment-block">
+                <div className="mb-payment-title">Payment links</div>
+                <div className="mb-payment-controls">
+                  <div className="mb-field mb-payment-field">
+                    <label className="mb-label" htmlFor="mb-pay-category">Category</label>
+                    <select
+                      id="mb-pay-category"
+                      className="mb-select"
+                      value={paymentCategoryIndex}
+                      onChange={e => setPaymentCategoryIndex(Number(e.target.value))}
+                    >
+                      {PAYMENT_LINK_CATEGORIES.map((cat, i) => (
+                        <option key={cat.id} value={i}>{cat.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-field mb-payment-field">
+                    <label className="mb-label" htmlFor="mb-pay-plan">Plan / checkout</label>
+                    <select
+                      id="mb-pay-plan"
+                      className="mb-select"
+                      value={paymentLinkIndex}
+                      onChange={e => setPaymentLinkIndex(Number(e.target.value))}
+                    >
+                      {(PAYMENT_LINK_CATEGORIES[paymentCategoryIndex]?.links ?? []).map((link, i) => (
+                        <option key={link.id} value={i}>
+                          {Number.isFinite(link.priceUsd)
+                            ? `${link.shortLabel || link.label} · ${formatListPriceUsd(link.priceUsd)}${PAYMENT_PRICE_SUFFIX}`
+                            : (link.shortLabel || link.label)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-payment-actions">
+                    <button
+                      type="button"
+                      className="mb-btn-primary"
+                      onClick={openPaymentLink}
+                      disabled={!selectedPaymentUrl}
+                      title={!selectedPaymentUrl ? "Add this checkout URL in deal-form/src/paymentLinks.js" : "Open in new tab"}
+                    >
+                      Open link
+                    </button>
+                    <button
+                      type="button"
+                      className="mb-btn-ghost"
+                      onClick={copyPaymentLink}
+                      disabled={!selectedPaymentUrl}
+                      title={!selectedPaymentUrl ? "Add this checkout URL in deal-form/src/paymentLinks.js" : "Copy URL"}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+                {selectedPaymentLink ? (
+                  <div className="mb-payment-plan-detail" aria-live="polite">
+                    <div className="mb-payment-plan-detail-inner">
+                      <div className="mb-payment-plan-name">{selectedPaymentLink.label}</div>
+                      {Number.isFinite(selectedPaymentLink.priceUsd) ? (
+                        <div className="mb-payment-plan-price-wrap">
+                          <p className="mb-payment-plan-price-sentence">
+                            Price is <strong>{formatListPriceUsd(selectedPaymentLink.priceUsd)}</strong>
+                            {PAYMENT_PRICE_SUFFIX ? (
+                              <span className="mb-payment-plan-price-unit">{PAYMENT_PRICE_SUFFIX}</span>
+                            ) : null}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              <div className="mb-quick-links-pills">
+                {quickResourceLinks.map(item =>
+                  item.href ? (
+                    <a
+                      key={item.key}
+                      className="mb-pill mb-pill-b mb-quick-link-btn"
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ backgroundColor: "#f5a623", color: "#000" }}
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <span
+                      key={item.key}
+                      className="mb-pill mb-pill-b mb-quick-link-btn mb-quick-link-btn--placeholder"
+                      title="URL not set in environment (VITE_*)"
+                      style={{ backgroundColor: "#f5a623", color: "#000" }}
+                    >
+                      {item.label}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+          </nav>
 
           {/* PROGRESS */}
           <div className="mb-prog-wrap">
@@ -817,7 +1151,7 @@ export default function DealSubmissionForm() {
                     <div className="mb-billing-grid">
                       {[
                         { val: "charge_today", title: "Charge Today", sub: "CC collected at close. Billing begins immediately on service start date." },
-                        { val: "att_port", title: "AT&T Port — 10-Day Trial", sub: "CC required on file. Charge triggers on port completion (~10 days)." }
+                        { val: "att_port", title: "10-Day Trial (Port-In)", sub: "CC required on file. Charge triggers on port completion (~10 days)." },
                       ].map(opt => (
                         <div key={opt.val} className={`mb-billing-card${form.billing_type === opt.val ? " selected" : ""}`} onClick={() => set("billing_type", opt.val)}>
                           <div className="mb-billing-title">{opt.title}</div>
@@ -849,7 +1183,7 @@ export default function DealSubmissionForm() {
 
                   <div className="mb-callout mb-callout-c">
                     <span className="mb-callout-icon">📡</span>
-                    <div className="mb-callout-text"><strong>AT&T port clients:</strong> Set charge date ~10 days from sale date. Brobot will confirm exact date once port completes.</div>
+                    <div className="mb-callout-text"><strong>Port-in (10-day delay):</strong> Set charge date ~10 days from sale date. Brobot will confirm the exact date once the port completes.</div>
                   </div>
                 </div>
               </div>
