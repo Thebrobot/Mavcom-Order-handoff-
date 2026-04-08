@@ -59,9 +59,9 @@ export function brobotOneCoreMrcForLines(n) {
 
 /** Default one-time setup fee (USD, no $) when a rep selects an Agent Broski line — edit here. */
 export const DEFAULT_SETUP_FEE_USD_BY_PRODUCT = {
-  /** Agent Broski Ai Receptionist */
+  /** Agent Broski (Ai Receptionist) */
   "ai-receptionist-priority": "1560",
-  /** Agent Broski Ai Receptionist + Conversational AI (SMS) */
+  /** Agent Broski (Ai Voice + SMS) */
   "ai-growth-priority": "2600",
 };
 
@@ -75,8 +75,8 @@ export const PRODUCT_OPTIONS = [
   { value: "", label: "Select product…" },
   { value: "brobot-one-basic", label: "Brobot One Basic" },
   { value: "brobot-one-core", label: "Brobot One Core" },
-  { value: "ai-receptionist-priority", label: "Agent Broski Ai Receptionist" },
-  { value: "ai-growth-priority", label: "Agent Broski Ai Receptionist + Conversational AI (SMS)" },
+  { value: "ai-receptionist-priority", label: "Agent Broski (Ai Receptionist)" },
+  { value: "ai-growth-priority", label: "Agent Broski (Ai Voice + SMS)" },
 ];
 
 function oneLineDefaultFromStripe(productId) {

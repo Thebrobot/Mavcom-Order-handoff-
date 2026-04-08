@@ -350,7 +350,6 @@ const STYLES = `
   }
   .mb-deal-step-hint { font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
   .mb-deal-step-hint strong { color: #0f172a; font-weight: 600; }
-  .mb-prod-input:focus { border-color: #f5a623; }
   .mb-remove-btn { background: #fff; border: 1px solid #fecaca; color: #dc2626; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: flex-end; flex-shrink: 0; font-family: monospace; }
   .mb-remove-btn:hover { border-color: #ef4444; color: #b91c1c; background: #fef2f2; }
   .mb-add-btn { background: #fff; border: 1px dashed rgba(245,166,35,0.45); color: #d97706; border-radius: 6px; padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 4px; }
@@ -688,8 +687,6 @@ function buildWebhookPayload(form, dealLineSummaries) {
   };
 }
 
-const today = new Date().toISOString().split("T")[0];
-
 export default function DealSubmissionForm() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -699,13 +696,16 @@ export default function DealSubmissionForm() {
   const [paymentCategoryIndex, setPaymentCategoryIndex] = useState(0);
   const [paymentLinkIndex, setPaymentLinkIndex] = useState(0);
 
-  const [form, setForm] = useState({
-    business_name: "", address: "", industry: "", website: "", biz_phone: "",
-    contact_first: "", contact_last: "", contact_phone: "", contact_email: "",
-    products: [{ productId: "", customLabel: "", lineQty: "", mrc: "", setup: "", term: "" }],
-    sale_date: today, billing_type: "", cc_collected: "", charge_date: "",
-    rep_name: "", rep_email: "", signed_date: today, start_date: "",
-    notes: "", confirm_signed: false, confirm_payment: false, confirm_onboard: false,
+  const [form, setForm] = useState(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return {
+      business_name: "", address: "", industry: "", website: "", biz_phone: "",
+      contact_first: "", contact_last: "", contact_phone: "", contact_email: "",
+      products: [{ productId: "", customLabel: "", lineQty: "", mrc: "", setup: "", term: "" }],
+      sale_date: today, billing_type: "", cc_collected: "", charge_date: "",
+      rep_name: "", rep_email: "", signed_date: today, start_date: "",
+      notes: "", confirm_signed: false, confirm_payment: false, confirm_onboard: false,
+    };
   });
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
@@ -876,17 +876,6 @@ export default function DealSubmissionForm() {
       setSubmitLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (step < 4) return;
-    const id = "msgsndr-embed-prefetch";
-    if (document.getElementById(id)) return;
-    const l = document.createElement("link");
-    l.id = id;
-    l.rel = "prefetch";
-    l.href = "https://link.msgsndr.com/js/form_embed.js";
-    document.head.appendChild(l);
-  }, [step]);
 
   if (submitted) {
     return (
@@ -1389,11 +1378,11 @@ export default function DealSubmissionForm() {
                     data-activation-value=""
                     data-deactivation-type="neverDeactivate"
                     data-deactivation-value=""
-                    data-form-name={"Porting Form\u00a0"}
+                    data-form-name="Porting Form"
                     data-height="640"
                     data-layout-iframe-id="inline-H8C5vTrJlfHah3Evz0cR"
                     data-form-id="H8C5vTrJlfHah3Evz0cR"
-                    title={"Porting Form\u00a0"}
+                    title="Porting Form"
                   />
                 </div>
                 <div className="mb-card-body">
