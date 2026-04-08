@@ -269,6 +269,56 @@ const STYLES = `
     .ad-stats { grid-template-columns: repeat(2, 1fr); }
     .ad-stats-section { margin-bottom: 20px; }
   }
+
+  /* ── INVITE MODAL ── */
+  .ad-invite-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .ad-invite-modal {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    padding: 32px; width: 100%; max-width: 420px;
+  }
+  .ad-invite-title {
+    font-family: 'Barlow', sans-serif; font-size: 20px; font-weight: 800;
+    color: #f1f5f9; margin-bottom: 6px;
+  }
+  .ad-invite-sub {
+    font-size: 13px; color: #f1f5f9; margin-bottom: 24px;
+  }
+  .ad-invite-field { margin-bottom: 16px; }
+  .ad-invite-label {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #f1f5f9; margin-bottom: 7px;
+  }
+  .ad-invite-input {
+    width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; font-family: 'Barlow', sans-serif;
+    color: #f1f5f9; outline: none; box-sizing: border-box;
+  }
+  .ad-invite-input:focus { border-color: #f5a623; }
+  .ad-invite-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .ad-invite-submit {
+    flex: 1; background: #f5a623; border: none; border-radius: 8px;
+    padding: 11px; font-family: 'Barlow', sans-serif; font-size: 14px;
+    font-weight: 700; color: #0f172a; cursor: pointer; transition: opacity 0.15s;
+  }
+  .ad-invite-submit:hover { opacity: 0.85; }
+  .ad-invite-submit:disabled { opacity: 0.4; cursor: default; }
+  .ad-invite-cancel {
+    background: transparent; border: 1px solid #334155; border-radius: 8px;
+    padding: 11px 20px; font-family: 'Barlow', sans-serif; font-size: 14px;
+    font-weight: 600; color: #f1f5f9; cursor: pointer; transition: border-color 0.15s;
+  }
+  .ad-invite-cancel:hover { border-color: #94a3b8; }
+  .ad-invite-success {
+    text-align: center; padding: 16px 0;
+  }
+  .ad-invite-success-icon { font-size: 40px; margin-bottom: 12px; }
+  .ad-invite-success-msg { font-size: 15px; color: #4ade80; font-weight: 600; margin-bottom: 6px; }
+  .ad-invite-success-sub { font-size: 13px; color: #f1f5f9; }
 `
 
 function fmt(n) {
@@ -315,6 +365,11 @@ export default function AdminDashboard() {
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteName, setInviteName] = useState('')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteStatus, setInviteStatus] = useState(null) // null | 'sending' | 'success' | 'error'
+  const [inviteError, setInviteError] = useState('')
   const [filter, setFilter] = useState('all')
   const [selectedDeal, setSelectedDeal] = useState(null)
   const [payoutMonth, setPayoutMonth] = useState(() => {
@@ -396,6 +451,32 @@ export default function AdminDashboard() {
 
     const { data, error } = await supabase.from('deals').update(updates).eq('id', deal.id).select().single()
     if (!error && data) handleUpdate(data)
+  }
+
+  const sendInvite = async (e) => {
+    e.preventDefault()
+    setInviteStatus('sending')
+    setInviteError('')
+    try {
+      const { error } = await supabase.functions.invoke('invite-partner', {
+        body: { email: inviteEmail.trim(), full_name: inviteName.trim() },
+      })
+      if (error) throw new Error(error.message)
+      setInviteStatus('success')
+      setInviteName('')
+      setInviteEmail('')
+    } catch (err) {
+      setInviteStatus('error')
+      setInviteError(err.message || 'Something went wrong.')
+    }
+  }
+
+  const closeInvite = () => {
+    setInviteOpen(false)
+    setInviteStatus(null)
+    setInviteError('')
+    setInviteName('')
+    setInviteEmail('')
   }
 
   const filtered = useMemo(() => {
@@ -578,6 +659,7 @@ export default function AdminDashboard() {
           <div className="ad-nav-actions">
             <span className="ad-nav-user">{user?.email}</span>
             <button className="ad-btn-ghost" onClick={() => navigate('/')}>+ Submit Deal</button>
+            <button className="ad-btn-ghost" style={{ borderColor: 'rgba(245,166,35,0.4)', color: '#f5a623' }} onClick={() => setInviteOpen(true)}>+ Invite Partner</button>
             <button className="ad-btn-ghost" onClick={() => navigate('/portal/dashboard')}>Partner View</button>
             <button className="ad-btn-ghost" onClick={handleSignOut}>Sign out</button>
           </div>
@@ -831,6 +913,56 @@ export default function AdminDashboard() {
           onClose={() => setSelectedDeal(null)}
           onUpdate={handleUpdate}
         />
+      )}
+
+      {inviteOpen && (
+        <div className="ad-invite-overlay" onClick={closeInvite}>
+          <div className="ad-invite-modal" onClick={e => e.stopPropagation()}>
+            {inviteStatus === 'success' ? (
+              <div className="ad-invite-success">
+                <div className="ad-invite-success-icon">✅</div>
+                <div className="ad-invite-success-msg">Invite sent!</div>
+                <div className="ad-invite-success-sub">{inviteEmail} will receive an email to set their password and access the partner portal.</div>
+                <button className="ad-invite-submit" style={{ marginTop: 24, width: '100%' }} onClick={closeInvite}>Done</button>
+              </div>
+            ) : (
+              <form onSubmit={sendInvite}>
+                <div className="ad-invite-title">Invite Partner</div>
+                <div className="ad-invite-sub">They'll receive an email with a link to set their password and log in.</div>
+                <div className="ad-invite-field">
+                  <label className="ad-invite-label">Full Name</label>
+                  <input
+                    className="ad-invite-input"
+                    type="text"
+                    placeholder="Jane Smith"
+                    value={inviteName}
+                    onChange={e => setInviteName(e.target.value)}
+                  />
+                </div>
+                <div className="ad-invite-field">
+                  <label className="ad-invite-label">Email Address <span style={{ color: '#fb7185' }}>*</span></label>
+                  <input
+                    className="ad-invite-input"
+                    type="email"
+                    placeholder="jane@company.com"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                {inviteStatus === 'error' && (
+                  <div style={{ color: '#fb7185', fontSize: 13, marginTop: 4 }}>{inviteError}</div>
+                )}
+                <div className="ad-invite-actions">
+                  <button type="button" className="ad-invite-cancel" onClick={closeInvite}>Cancel</button>
+                  <button type="submit" className="ad-invite-submit" disabled={inviteStatus === 'sending'}>
+                    {inviteStatus === 'sending' ? 'Sending…' : 'Send Invite'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       )}
     </>
   )
