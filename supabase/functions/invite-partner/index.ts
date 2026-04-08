@@ -18,20 +18,29 @@ serve(async (req) => {
       return json({ error: 'No authorization header' }, 401)
     }
 
-    const supabaseUrl     = Deno.env.get('SUPABASE_URL')!
-    const anonKey         = Deno.env.get('SUPABASE_ANON_KEY')!
-    const serviceRoleKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl    = Deno.env.get('SUPABASE_URL')!
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Verify the calling user is an admin
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    })
-    const { data: profile, error: profileErr } = await callerClient
+    // Use service role client — bypasses RLS entirely
+    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    // Get caller's user ID from their JWT
+    const jwt = authHeader.replace('Bearer ', '')
+    const { data: { user: caller }, error: callerErr } = await adminClient.auth.getUser(jwt)
+    if (callerErr || !caller) {
+      return json({ error: 'Invalid session' }, 401)
+    }
+
+    // Check is_admin from profiles table (service role bypasses RLS)
+    const { data: profile } = await adminClient
       .from('profiles')
       .select('is_admin')
+      .eq('id', caller.id)
       .single()
 
-    if (profileErr || !profile?.is_admin) {
+    // Also accept app_metadata.is_admin as fallback
+    const isAdmin = profile?.is_admin === true || caller.app_metadata?.is_admin === true
+    if (!isAdmin) {
       return json({ error: 'Admin access required' }, 403)
     }
 
@@ -40,7 +49,6 @@ serve(async (req) => {
     if (!email) return json({ error: 'Email is required' }, 400)
 
     // Send the invite using the service role key
-    const adminClient = createClient(supabaseUrl, serviceRoleKey)
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: { full_name: full_name?.trim() || '' },
       redirectTo: `${req.headers.get('origin') || 'https://your-vercel-app.vercel.app'}/portal/login`,

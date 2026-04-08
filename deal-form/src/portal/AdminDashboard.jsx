@@ -555,10 +555,14 @@ export default function AdminDashboard() {
     setInviteStatus('sending')
     setInviteError('')
     try {
-      const { error } = await supabase.functions.invoke('invite-partner', {
+      const { data, error } = await supabase.functions.invoke('invite-partner', {
         body: { email: inviteEmail.trim(), full_name: inviteName.trim() },
       })
-      if (error) throw new Error(error.message)
+      if (error) {
+        // Extract the actual message from the function response body if available
+        const detail = data?.error || error.message
+        throw new Error(detail)
+      }
       setInviteStatus('success')
       setInviteName('')
       setInviteEmail('')
