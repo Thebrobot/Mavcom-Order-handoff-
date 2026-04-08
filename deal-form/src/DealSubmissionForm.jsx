@@ -933,7 +933,7 @@ export default function DealSubmissionForm() {
               <p className="mb-success-tail">
                 Questions? We&apos;re here for you — <span className="hl">info@thebrobot.com</span>
               </p>
-              <a href="/portal/dashboard" className="mb-success-portal-btn">
+              <a href="/portal/login" className="mb-success-portal-btn">
                 View My Commission →
               </a>
             </div>
@@ -959,7 +959,7 @@ export default function DealSubmissionForm() {
             <h1 className="mb-h1">New Client<br /><em>Deal Submission</em></h1>
             <p className="mb-sub">Complete within 24 hours of close. One form for the full handoff—submit to Brobot for account activation.</p>
             <div className="mb-rule" />
-            <a href="/portal/dashboard" className="mb-portal-link">
+            <a href="/portal/login" className="mb-portal-link">
               <span className="mb-portal-link-dot" />
               Partner Portal — View My Deals →
             </a>
