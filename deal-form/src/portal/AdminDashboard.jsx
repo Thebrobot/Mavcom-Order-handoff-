@@ -76,6 +76,83 @@ const STYLES = `
   }
   .ad-btn-ghost:hover { border-color: #94a3b8; color: #f1f5f9; }
 
+  /* ── PARTNER VIEW DROPDOWN ── */
+  .ad-partner-drop-wrap { position: relative; }
+  .ad-partner-drop-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    min-width: 220px;
+    z-index: 100;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .ad-partner-drop-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 10px 14px 6px;
+  }
+  .ad-partner-drop-item {
+    display: block; width: 100%; text-align: left;
+    padding: 10px 14px; background: none; border: none;
+    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    color: #e2e8f0; cursor: pointer; transition: background 0.12s;
+  }
+  .ad-partner-drop-item:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; }
+  .ad-partner-drop-item small { display: block; font-size: 11px; font-weight: 400; color: #64748b; margin-top: 2px; }
+
+  /* ── PARTNER SUBVIEW BANNER ── */
+  .ad-subview-banner {
+    background: rgba(56,189,248,0.07);
+    border-bottom: 1px solid rgba(56,189,248,0.2);
+    padding: 10px 24px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; color: #7dd3fc;
+    font-family: 'Barlow', sans-serif;
+  }
+  .ad-subview-banner strong { color: #f1f5f9; font-weight: 700; }
+  .ad-subview-exit {
+    margin-left: auto; background: none;
+    border: 1px solid rgba(56,189,248,0.3);
+    border-radius: 7px; padding: 5px 12px;
+    font-size: 12px; font-weight: 700; color: #7dd3fc;
+    cursor: pointer; font-family: 'Barlow', sans-serif;
+    transition: background 0.12s;
+  }
+  .ad-subview-exit:hover { background: rgba(56,189,248,0.1); }
+
+  /* ── PARTNER SUBVIEW CONTENT ── */
+  .ad-subview-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+  .ad-subview-tier {
+    background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 24px;
+  }
+  .ad-subview-tier-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;
+  }
+  .ad-subview-tier-bar-bg {
+    background: #0f172a; border-radius: 100px; height: 8px; overflow: hidden; margin-bottom: 6px;
+  }
+  .ad-subview-tier-bar-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, #f5a623, #fb923c);
+    transition: width 0.5s ease;
+  }
+  .ad-subview-tier-nums {
+    display: flex; justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94a3b8;
+  }
+
   .ad-body { max-width: 1400px; margin: 0 auto; padding: 36px 24px 80px; width: 100%; }
 
   .ad-page-head { margin-bottom: 32px; }
@@ -241,6 +318,16 @@ const STYLES = `
   .ad-paid-select.status-cancelled { background: rgba(251,113,133,0.1); border-color: rgba(251,113,133,0.3); color: #fb7185; }
   .ad-paid-select:hover { opacity: 0.8; }
 
+  /* Paid button used in partner subview */
+  .ad-paid-badge {
+    background: transparent; border: 1px solid transparent; border-radius: 100px;
+    padding: 5px 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+    outline: none; transition: all 0.15s;
+  }
+  .ad-paid-badge.paid { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.25); color: #4ade80; }
+  .ad-paid-badge.unpaid { background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.25); color: #cbd5e1; }
+
   .ad-products-list { font-size: 13px; color: #f1f5f9; line-height: 1.5; max-width: 220px; white-space: normal; }
   .ad-empty { padding: 60px 24px; text-align: center; }
   .ad-empty-icon { font-size: 38px; margin-bottom: 14px; opacity: 0.35; }
@@ -377,6 +464,16 @@ export default function AdminDashboard() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
   const [payoutPartner, setPayoutPartner] = useState('all')
+  const [viewAsPartner, setViewAsPartner] = useState(null) // {email, name} or null
+  const [partnerDropOpen, setPartnerDropOpen] = useState(false)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!partnerDropOpen) return
+    const close = () => setPartnerDropOpen(false)
+    document.addEventListener('click', close, { once: true })
+    return () => document.removeEventListener('click', close)
+  }, [partnerDropOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -660,12 +757,159 @@ export default function AdminDashboard() {
             <span className="ad-nav-user">{user?.email}</span>
             <button className="ad-btn-ghost" onClick={() => navigate('/')}>+ Submit Deal</button>
             <button className="ad-btn-ghost" style={{ borderColor: 'rgba(245,166,35,0.4)', color: '#f5a623' }} onClick={() => setInviteOpen(true)}>+ Invite Partner</button>
-            <button className="ad-btn-ghost" onClick={() => navigate('/portal/dashboard')}>Partner View</button>
+            <div className="ad-partner-drop-wrap">
+              <button
+                className="ad-btn-ghost"
+                onClick={() => setPartnerDropOpen(o => !o)}
+                style={viewAsPartner ? { borderColor: 'rgba(56,189,248,0.4)', color: '#7dd3fc' } : {}}
+              >
+                {viewAsPartner ? `Viewing: ${viewAsPartner.name || viewAsPartner.email}` : 'Partner View ▾'}
+              </button>
+              {partnerDropOpen && (
+                <div className="ad-partner-drop-menu">
+                  <div className="ad-partner-drop-label">View as partner</div>
+                  {payoutPartnerOptions.length === 0 && (
+                    <button className="ad-partner-drop-item" disabled>No partners yet</button>
+                  )}
+                  {payoutPartnerOptions.map(([email, name]) => (
+                    <button
+                      key={email}
+                      className="ad-partner-drop-item"
+                      onClick={() => { setViewAsPartner({ email, name }); setPartnerDropOpen(false) }}
+                    >
+                      {name}<small>{email}</small>
+                    </button>
+                  ))}
+                  {viewAsPartner && (
+                    <button
+                      className="ad-partner-drop-item"
+                      style={{ color: '#f87171', borderTop: '1px solid #1e293b' }}
+                      onClick={() => { setViewAsPartner(null); setPartnerDropOpen(false) }}
+                    >
+                      ✕ Exit Partner View
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             <button className="ad-btn-ghost" onClick={handleSignOut}>Sign out</button>
           </div>
         </nav>
 
+        {viewAsPartner && (
+          <div className="ad-subview-banner">
+            <span>👁 Viewing as partner:</span>
+            <strong>{viewAsPartner.name || viewAsPartner.email}</strong>
+            <span style={{ color: '#475569' }}>{viewAsPartner.name ? viewAsPartner.email : ''}</span>
+            <button className="ad-subview-exit" onClick={() => setViewAsPartner(null)}>✕ Exit</button>
+          </div>
+        )}
+
         <div className="ad-body">
+          {viewAsPartner ? (() => {
+            const pDeals = deals.filter(d => d.rep_email === viewAsPartner.email)
+            const lifetimeEarned = pDeals.reduce((s, d) => {
+              try {
+                const prods = Array.isArray(d.products_json) ? d.products_json : JSON.parse(d.products_json || '[]')
+                return s + calcProductCommissionTotal(prods)
+              } catch { return s }
+            }, 0)
+            const tierPct = Math.min(100, (lifetimeEarned / RESIDUAL_TIER_THRESHOLD) * 100)
+            const tierUnlocked = lifetimeEarned >= RESIDUAL_TIER_THRESHOLD
+            const pUpfront = pDeals.reduce((s, d) => s + (parseFloat(d.upfront_commission) || 0), 0)
+            const pResidual = pDeals.reduce((s, d) => s + (parseFloat(d.monthly_residual) || 0), 0)
+            const fmt = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+            return (
+              <>
+                <div className="ad-page-head">
+                  <h1 className="ad-page-h1">{viewAsPartner.name || viewAsPartner.email}'s <em>Deals</em></h1>
+                  <div className="ad-page-rule" />
+                </div>
+                <div className="ad-subview-tier">
+                  <div className="ad-subview-tier-label">
+                    {tierUnlocked ? '🎉 30% Residual Tier Unlocked' : `Residual Tier Progress — ${fmt(lifetimeEarned)} of $30K`}
+                  </div>
+                  <div className="ad-subview-tier-bar-bg">
+                    <div className="ad-subview-tier-bar-fill" style={{ width: `${tierPct}%` }} />
+                  </div>
+                  <div className="ad-subview-tier-nums">
+                    <span>{fmt(lifetimeEarned)}</span>
+                    <span>$30,000</span>
+                  </div>
+                </div>
+                <div className="ad-subview-stats">
+                  <div className="ad-stat">
+                    <div className="ad-stat-label">Total Deals</div>
+                    <div className="ad-stat-value accent">{pDeals.length}</div>
+                  </div>
+                  <div className="ad-stat">
+                    <div className="ad-stat-label">Upfront Earned</div>
+                    <div className="ad-stat-value accent">{fmt(pUpfront)}</div>
+                  </div>
+                  <div className="ad-stat">
+                    <div className="ad-stat-label">Monthly Residual</div>
+                    <div className="ad-stat-value" style={{ color: '#4ade80' }}>{fmt(pResidual)}/mo</div>
+                  </div>
+                  <div className="ad-stat">
+                    <div className="ad-stat-label">Residual Rate</div>
+                    <div className="ad-stat-value" style={{ color: tierUnlocked ? '#4ade80' : '#f5a623' }}>{tierUnlocked ? '30%' : '25%'}</div>
+                  </div>
+                </div>
+                <div className="ad-table-wrap">
+                  <div className="ad-table-scroll">
+                    <table className="ad-table">
+                      <thead>
+                        <tr>
+                          <th>Client</th>
+                          <th>Services</th>
+                          <th>Status</th>
+                          <th>First Payment</th>
+                          <th>Upfront</th>
+                          <th>Residual</th>
+                          <th>Paid</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pDeals.length === 0 && (
+                          <tr><td colSpan={7} style={{ textAlign: 'center', color: '#475569', padding: '32px' }}>No deals found for this partner.</td></tr>
+                        )}
+                        {pDeals.map(deal => {
+                          const { label, cls } = dealStatus(deal)
+                          return (
+                            <tr key={deal.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedDeal(deal)}>
+                              <td>
+                                <span style={{ fontWeight: 700 }}>{deal.client_name || '—'}</span>
+                                {deal.business_name && <span style={{ display: 'block', fontSize: 12, color: '#94a3b8' }}>{deal.business_name}</span>}
+                                {deal.multi_location && <span style={{ fontSize: 10, background: 'rgba(56,189,248,0.15)', color: '#38bdf8', borderRadius: 4, padding: '1px 5px', marginLeft: 4 }}>MULTI-LOC</span>}
+                              </td>
+                              <td style={{ whiteSpace: 'pre-line', fontSize: 13 }}>{productNames(deal.products_json)}</td>
+                              <td><span className={cls}>{label}</span></td>
+                              <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>
+                                {deal.first_payment_date ? new Date(deal.first_payment_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                              </td>
+                              <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#f5a623' }}>
+                                {deal.upfront_commission != null ? fmt(deal.upfront_commission) : '—'}
+                              </td>
+                              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#4ade80' }}>
+                                {deal.monthly_residual != null ? '$' + Number(deal.monthly_residual).toFixed(2) + '/mo' : '—'}
+                              </td>
+                              <td>
+                                <button
+                                  className={deal.commission_paid ? 'ad-paid-badge paid' : 'ad-paid-badge unpaid'}
+                                  onClick={e => togglePaid(e, deal)}
+                                >{deal.commission_paid ? '✓ Paid' : 'Unpaid'}</button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )
+          })() : (
+          <>
           <div className="ad-page-head">
             <h1 className="ad-page-h1">Deal <em>Command Center</em></h1>
             <div className="ad-page-rule" />
@@ -903,6 +1147,8 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
       </div>
 
