@@ -6,7 +6,14 @@ import {
   computeCatalogMrc,
   defaultSetupFeeForProduct,
   getPricingHints,
+  getStripePriceUsd,
 } from "./productPricing.js";
+import { supabase } from "./portal/supabaseClient.js";
+import {
+  calcUpfront,
+  calcProductCommissionTotal,
+  calcMonthlyResidual,
+} from "./portal/commissionRules.js";
 
 /** When VITE_* is unset at build (e.g. missing in Vercel), still ship working links. Override via env. */
 const DEFAULT_VITE_LINK_AI_KNOWLEDGE =
@@ -55,6 +62,9 @@ const STYLES = `
   .mb-h1 em { font-style: italic; color: #d97706; }
   .mb-sub { font-size: 15px; color: #475569; max-width: 460px; margin: 0 auto; line-height: 1.75; }
   .mb-rule { width: 56px; height: 2px; background: linear-gradient(90deg, #f5a623, #38bdf8); margin: 16px auto 0; border-radius: 2px; }
+  .mb-portal-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 7px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 12px; font-weight: 700; color: #475569; text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; transition: border-color 0.15s, color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
+  .mb-portal-link:hover { border-color: #f5a623; color: #d97706; box-shadow: 0 2px 8px rgba(245,166,35,0.15); }
+  .mb-portal-link-dot { width: 7px; height: 7px; border-radius: 50%; background: #f5a623; flex-shrink: 0; }
 
   .mb-quick-links {
     margin: 0 auto 28px;
@@ -536,6 +546,8 @@ const STYLES = `
     line-height: 1.7;
   }
   .mb-success-tail .hl { color: #d97706; font-weight: 500; }
+  .mb-success-portal-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 28px; padding: 13px 28px; background: #f5a623; color: #000; border-radius: 100px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; transition: opacity 0.15s, transform 0.1s; }
+  .mb-success-portal-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
   @media (max-width: 560px) {
     .mb-g2 { grid-template-columns: 1fr; }
@@ -666,7 +678,6 @@ function buildWebhookPayload(form, dealLineSummaries) {
     },
     billing: {
       saleDate: form.sale_date,
-      billingType: form.billing_type,
       ccCollected: form.cc_collected,
       estimatedChargeDate: form.charge_date,
     },
@@ -702,8 +713,8 @@ export default function DealSubmissionForm() {
       business_name: "", address: "", industry: "", website: "", biz_phone: "",
       contact_first: "", contact_last: "", contact_phone: "", contact_email: "",
       products: [{ productId: "", customLabel: "", lineQty: "", mrc: "", setup: "", term: "" }],
-      sale_date: today, billing_type: "", cc_collected: "", charge_date: "",
-      rep_name: "", rep_email: "", signed_date: today, start_date: "",
+      sale_date: today, cc_collected: "", charge_date: "",
+      rep_name: "", rep_email: "", closer_name: "", multi_location: false, signed_date: today, start_date: "",
       notes: "", confirm_signed: false, confirm_payment: false, confirm_onboard: false,
     };
   });
@@ -777,13 +788,6 @@ export default function DealSubmissionForm() {
     if (step !== 5) setConfirmUploadsDone(false);
   }, [step]);
 
-  useEffect(() => {
-    if (step !== 3) return;
-    setForm(f => {
-      if (f.billing_type === "") return { ...f, billing_type: "charge_today" };
-      return f;
-    });
-  }, [step]);
 
   useEffect(() => {
     setPaymentLinkIndex(0);
@@ -855,6 +859,8 @@ export default function DealSubmissionForm() {
     setSubmitLoading(true);
     try {
       const payload = buildWebhookPayload(form, dealLineSummaries);
+
+      // ── Primary: GHL webhook (unchanged) ──────────────────
       const res = await fetch(String(url).trim(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -864,6 +870,39 @@ export default function DealSubmissionForm() {
         const text = await res.text().catch(() => "");
         throw new Error(text?.trim() || `Webhook returned ${res.status}`);
       }
+
+      // ── Secondary: Supabase portal record ─────────────────
+      const productCommTotal = calcProductCommissionTotal(form.products);
+      const upfront          = calcUpfront(form.products, dealLineSummaries.sumSetup);
+      const residual         = calcMonthlyResidual(productCommTotal, 0); // new partners start at 25%
+
+      // plan_mrc kept for reference — still the sum of base (1-device) Stripe prices
+      const planMrc = form.products.reduce((sum, p) => {
+        const base = getStripePriceUsd(p.productId, 1);
+        return sum + (base != null ? base : (parseMoney(p.mrc) || 0));
+      }, 0);
+
+      supabase.rpc("insert_deal", {
+        payload: {
+          rep_email:          form.rep_email.trim().toLowerCase(),
+          rep_name:           form.rep_name,
+          closer_name:        form.closer_name.trim() || null,
+          multi_location:     form.multi_location,
+          client_name:        `${form.contact_first} ${form.contact_last}`.trim(),
+          business_name:      form.business_name,
+          products_json:      form.products,
+          total_mrc:          dealLineSummaries.sumMrc,
+          plan_mrc:           planMrc,
+          total_setup:        dealLineSummaries.sumSetup,
+          commission_amount:  upfront,
+          upfront_commission: upfront,
+          monthly_residual:   residual,
+          sale_date:          form.sale_date || null,
+        },
+      }).then(({ error }) => {
+        if (error) console.warn("[Portal] Supabase insert failed:", error.message);
+      });
+
       setSubmitted(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Submission failed.";
@@ -894,6 +933,9 @@ export default function DealSubmissionForm() {
               <p className="mb-success-tail">
                 Questions? We&apos;re here for you — <span className="hl">info@thebrobot.com</span>
               </p>
+              <a href="/portal/dashboard" className="mb-success-portal-btn">
+                View My Commission →
+              </a>
             </div>
           </div>
         </div>
@@ -917,6 +959,10 @@ export default function DealSubmissionForm() {
             <h1 className="mb-h1">New Client<br /><em>Deal Submission</em></h1>
             <p className="mb-sub">Complete within 24 hours of close. One form for the full handoff—submit to Brobot for account activation.</p>
             <div className="mb-rule" />
+            <a href="/portal/dashboard" className="mb-portal-link">
+              <span className="mb-portal-link-dot" />
+              Partner Portal — View My Deals →
+            </a>
           </div>
 
           <nav className="mb-quick-links" aria-label="Quick links">
@@ -1235,24 +1281,9 @@ export default function DealSubmissionForm() {
                     </div>
                   </div>
 
-                  <div className="mb-field" style={{ marginBottom: 16 }}>
-                    <label className="mb-label">Billing Type <span className="req">*</span></label>
-                    <div className="mb-billing-grid">
-                      {[
-                        { val: "charge_today", title: "Charge Today", sub: "CC collected at close. Billing begins immediately on service start date." },
-                        { val: "att_port", title: "10-Day Trial (Port-In)", sub: "CC required on file. Charge triggers on port completion (~10 days)." },
-                      ].map(opt => (
-                        <div key={opt.val} className={`mb-billing-card${form.billing_type === opt.val ? " selected" : ""}`} onClick={() => set("billing_type", opt.val)}>
-                          <div className="mb-billing-title">{opt.title}</div>
-                          <div className="mb-billing-sub">{opt.sub}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="mb-callout mb-callout-o" style={{ marginBottom: 16 }}>
                     <span className="mb-callout-icon">💳</span>
-                    <div className="mb-callout-text"><strong>Payment link must be sent and CC collected before submitting.</strong> A valid CC on file is required in both billing scenarios.</div>
+                    <div className="mb-callout-text"><strong>Payment link must be sent and CC collected before submitting.</strong> A valid CC on file is required.</div>
                   </div>
 
                   <div className="mb-g2">
@@ -1289,17 +1320,35 @@ export default function DealSubmissionForm() {
               <div className="mb-card">
                 <div className="mb-card-head">
                   <span className="mb-card-num">05 —</span>
-                  <span className="mb-card-title">Rep &amp; Deal Attribution</span>
+                  <span className="mb-card-title">Partner &amp; Deal Attribution</span>
                 </div>
                 <div className="mb-card-body">
                   <div className="mb-g2">
                     <div className="mb-field">
-                      <label className="mb-label">Sales rep full name <span className="req">*</span></label>
+                      <label className="mb-label">Partner full name <span className="req">*</span></label>
                       <input className="mb-input" value={form.rep_name} onChange={e => set("rep_name", e.target.value)} placeholder="First Last" />
                     </div>
                     <div className="mb-field">
-                      <label className="mb-label">Sales rep email <span className="req">*</span></label>
+                      <label className="mb-label">Partner email <span className="req">*</span></label>
                       <input className="mb-input" value={form.rep_email} onChange={e => set("rep_email", e.target.value)} placeholder="you@company.com" />
+                    </div>
+                    <div className="mb-field">
+                      <label className="mb-label">Closer Name <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span></label>
+                      <input className="mb-input" value={form.closer_name} onChange={e => set("closer_name", e.target.value)} placeholder="Rep who closed this deal" />
+                    </div>
+                    <div className="mb-field" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', userSelect: 'none' }}>
+                        <input
+                          type="checkbox"
+                          checked={form.multi_location}
+                          onChange={e => set("multi_location", e.target.checked)}
+                          style={{ width: 18, height: 18, accentColor: '#c084fc', cursor: 'pointer', flexShrink: 0 }}
+                        />
+                        <span>
+                          <span className="mb-label" style={{ margin: 0, display: 'block' }}>Multi-Location Deal</span>
+                          <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 400 }}>Check this if the client is purchasing services across more than one location.</span>
+                        </span>
+                      </label>
                     </div>
                     <div className="mb-field">
                       <label className="mb-label">Agreement Signed Date <span className="req">*</span></label>
@@ -1315,7 +1364,7 @@ export default function DealSubmissionForm() {
                     <textarea className="mb-textarea" value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="e.g. Client requested onboarding before April 1st, existing Hibu contract expires end of month…" />
                   </div>
                   <div className="mb-field" style={{ marginTop: 14 }}>
-                    <label className="mb-label">Rep Confirms <span className="req">*</span></label>
+                    <label className="mb-label">Partner Confirms <span className="req">*</span></label>
                     <div className="mb-checks">
                       {[
                         { key: "confirm_signed", text: "Client has reviewed and signed the service agreement." },

@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --prefix deal-form",
   "buildCommand": "npm run build --prefix deal-form",
-  "outputDirectory": "deal-form/dist"
+  "outputDirectory": "deal-form/dist",
+  "rewrites": [
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ]
 }
