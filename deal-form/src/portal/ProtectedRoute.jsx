@@ -28,10 +28,13 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
         return
       }
 
-      // Use RPC to bypass RLS reliably
-      const { data: isAdmin } = await supabase.rpc('get_my_is_admin')
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
 
-      if (!cancelled) setState({ loading: false, user, isAdmin: isAdmin ?? false })
+      if (!cancelled) setState({ loading: false, user, isAdmin: profile?.is_admin ?? false })
     }
 
     check()
