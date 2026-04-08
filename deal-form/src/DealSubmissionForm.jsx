@@ -1,5 +1,12 @@
 import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { PAYMENT_LINK_CATEGORIES, PAYMENT_PRICE_SUFFIX } from "./paymentLinks.js";
+import {
+  PRODUCT_OPTIONS,
+  PRODUCT_DEFAULT_MRC,
+  computeCatalogMrc,
+  defaultSetupFeeForProduct,
+  getPricingHints,
+} from "./productPricing.js";
 
 /** When VITE_* is unset at build (e.g. missing in Vercel), still ship working links. Override via env. */
 const DEFAULT_VITE_LINK_AI_KNOWLEDGE =
@@ -274,27 +281,74 @@ const STYLES = `
   .mb-textarea::placeholder { color: #94a3b8; font-size: 15px; }
   .mb-textarea:focus { border-color: #f5a623; box-shadow: 0 0 0 3px rgba(245,166,35,0.2); }
 
-  /* PRODUCT ROWS */
-  .mb-prod-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+  /* PRODUCT ROWS — product | # lines | MRC | setup | term | remove */
+  .mb-prod-row { display: grid; grid-template-columns: minmax(140px, 2.2fr) minmax(72px, 0.75fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
   .mb-prod-col { display: flex; flex-direction: column; gap: 4px; }
   .mb-prod-col-label { font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0.01em; color: #000000; }
   .mb-prod-input { background: transparent; border: none; border-bottom: 1px solid #cbd5e1; border-radius: 0; padding: 4px 2px; font-size: 15px; color: #0f172a; outline: none; font-family: 'Barlow', sans-serif; width: 100%; transition: border-color 0.2s; }
   .mb-prod-input::placeholder { color: #94a3b8; font-size: 14px; }
   .mb-card-deal-lines .mb-prod-row {
-    grid-template-columns: minmax(140px, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
-    padding: 14px 14px;
+    grid-template-columns: minmax(160px, 1.6fr) minmax(76px, 0.55fr) repeat(3, minmax(0, 1fr)) 44px;
+    padding: 12px 12px;
     margin-bottom: 10px;
     border-color: #e2e8f0;
-    gap: 12px;
-    align-items: start;
+    gap: 10px 12px;
+    align-items: stretch;
   }
-  .mb-card-deal-lines .mb-remove-btn { margin-top: 26px; flex-shrink: 0; }
-  .mb-card-deal-lines .mb-prod-col-product .mb-select { width: 100%; font-size: 16px; }
-  .mb-card-deal-lines .mb-prod-other-input { margin-top: 10px; width: 100%; }
-  .mb-card-deal-lines .mb-prod-col-label { font-size: 14px; font-weight: 600; letter-spacing: 0.01em; color: #000000; }
-  .mb-card-deal-lines .mb-prod-input { font-size: 16px; padding: 8px 4px; border-bottom-width: 2px; }
+  .mb-card-deal-lines .mb-prod-col {
+    gap: 6px;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+  .mb-card-deal-lines .mb-prod-col-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.2;
+    min-height: 2.4em;
+    display: flex;
+    align-items: flex-end;
+  }
+  .mb-card-deal-lines .mb-prod-col-product .mb-select {
+    width: 100%;
+    font-size: 15px;
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    box-sizing: border-box;
+  }
+  .mb-card-deal-lines .mb-prod-other-input { margin-top: 8px; width: 100%; }
+  .mb-card-deal-lines .mb-prod-input {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 15px;
+    min-height: 44px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .mb-card-deal-lines .mb-prod-input:focus {
+    border-color: #f5a623;
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.2);
+  }
   .mb-card-deal-lines .mb-prod-input::placeholder { font-size: 14px; color: #94a3b8; }
-  .mb-deal-step-hint { font-size: 16px; color: #475569; line-height: 1.7; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+  .mb-card-deal-lines .mb-prod-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+  .mb-card-deal-lines .mb-prod-input[type="number"]::-webkit-outer-spin-button,
+  .mb-card-deal-lines .mb-prod-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .mb-card-deal-lines .mb-remove-btn {
+    margin-top: 0;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    align-self: end;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .mb-deal-step-hint { font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
   .mb-deal-step-hint strong { color: #0f172a; font-weight: 600; }
   .mb-prod-input:focus { border-color: #f5a623; }
   .mb-remove-btn { background: #fff; border: 1px solid #fecaca; color: #dc2626; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; align-self: flex-end; flex-shrink: 0; font-family: monospace; }
@@ -489,44 +543,25 @@ const STYLES = `
     .mb-span2 { grid-column: span 1; }
     .mb-billing-grid { grid-template-columns: 1fr; }
     .mb-prod-row { grid-template-columns: 1fr 1fr; }
-    .mb-card-deal-lines .mb-prod-row { grid-template-columns: 1fr; }
-    .mb-card-deal-lines .mb-remove-btn { margin-top: 8px; justify-self: end; }
+    .mb-card-deal-lines .mb-prod-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .mb-card-deal-lines .mb-prod-col-remove {
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: center;
+      grid-column: 1 / -1;
+      padding-top: 2px;
+    }
+    .mb-card-deal-lines .mb-prod-col-remove .mb-prod-col-label { display: none; }
+    .mb-card-deal-lines .mb-remove-btn { align-self: center; }
     .mb-deal-summary-row { grid-template-columns: 1fr; }
   }
 `;
 
 const STEPS = ["Client", "Deal", "Billing", "Rep", "Files"];
 const INDUSTRIES = ["Select industry…","Healthcare","Legal / Law Firm","Real Estate","Home Services","Restaurant / Food & Bev","Retail / eCommerce","Automotive","Financial Services","Professional Services","Nonprofit","Other"];
-
-/** Recurring commission catalog — default MRC matches sheet (display price). */
-const PRODUCT_OPTIONS = [
-  { value: "", label: "Select product…" },
-  { value: "brobot-one-core", label: "Brobot One Core" },
-  { value: "brobot-one-basic", label: "Brobot One Basic" },
-  { value: "ai-receptionist-priority", label: "AI Receptionist ⚡PRIORITY" },
-  { value: "ai-growth-priority", label: "AI Growth ⚡PRIORITY" },
-  { value: "additional-numbers", label: "Additional Numbers" },
-  { value: "revubro-starter", label: "RevuBro Starter" },
-  { value: "revubro-growth", label: "RevuBro Growth" },
-  { value: "revubro-pro", label: "RevuBro Pro" },
-  { value: "imapspro", label: "iMapsPro" },
-  { value: "bot-only-ai-priority", label: "Bot-Only AI ⚡PRIORITY" },
-  { value: "other", label: "Other — custom product" },
-];
-
-/** Prefills monthly amount when a catalog line is chosen (rep can override). */
-const PRODUCT_DEFAULT_MRC = {
-  "brobot-one-core": "297",
-  "brobot-one-basic": "129.99",
-  "ai-receptionist-priority": "497",
-  "ai-growth-priority": "697",
-  "additional-numbers": "25",
-  "revubro-starter": "97",
-  "revubro-growth": "197",
-  "revubro-pro": "297",
-  imapspro: "25",
-  "bot-only-ai-priority": "499",
-};
 
 /** LeadConnector file-upload widget — query param must match hidden field name in GHL (see .env.example). */
 const GHL_UPLOAD_FORM_EMBED_URL =
@@ -566,13 +601,16 @@ function formatListPriceUsd(n) {
 function buildWebhookPayload(form, dealLineSummaries) {
   const productsDetailed = form.products.map(p => {
     const opt = PRODUCT_OPTIONS.find(o => o.value === p.productId);
+    const hints = getPricingHints(p.productId);
     return {
       productId: p.productId,
       productLabel: opt?.label ?? "",
       customLabel: p.customLabel,
+      lineQty: p.lineQty ?? "",
       monthlyAmount: p.mrc,
       setupFee: p.setup,
       contractTermMonths: p.term,
+      ...(hints ? { pricingHints: hints } : {}),
     };
   });
   const productsJsonStr = JSON.stringify(productsDetailed);
@@ -582,7 +620,12 @@ function buildWebhookPayload(form, dealLineSummaries) {
         line.customLabel && String(line.customLabel).trim()
           ? line.customLabel
           : line.productLabel || line.productId || "Product";
-      return `${name} | MRC ${line.monthlyAmount} | Setup ${line.setupFee} | ${line.contractTermMonths} mo`;
+      const linePart =
+        line.lineQty != null && String(line.lineQty).trim()
+          ? `${String(line.lineQty).trim()} lines`
+          : "";
+      const bits = [name, linePart, `MRC ${line.monthlyAmount}`, `Setup ${line.setupFee}`, `${line.contractTermMonths} mo`].filter(Boolean);
+      return bits.join(" | ");
     })
     .join("\n");
 
@@ -659,7 +702,7 @@ export default function DealSubmissionForm() {
   const [form, setForm] = useState({
     business_name: "", address: "", industry: "", website: "", biz_phone: "",
     contact_first: "", contact_last: "", contact_phone: "", contact_email: "",
-    products: [{ productId: "", customLabel: "", mrc: "", setup: "", term: "" }],
+    products: [{ productId: "", customLabel: "", lineQty: "", mrc: "", setup: "", term: "" }],
     sale_date: today, billing_type: "", cc_collected: "", charge_date: "",
     rep_name: "", rep_email: "", signed_date: today, start_date: "",
     notes: "", confirm_signed: false, confirm_payment: false, confirm_onboard: false,
@@ -671,7 +714,20 @@ export default function DealSubmissionForm() {
     p[i] = { ...p[i], [key]: val };
     return { ...f, products: p };
   });
-  const addProduct = () => setForm(f => ({ ...f, products: [...f.products, { productId: "", customLabel: "", mrc: "", setup: "", term: "" }] }));
+  const patchProductRow = (i, patch) => {
+    setForm(f => {
+      const rows = [...f.products];
+      const row = { ...rows[i], ...patch };
+      const recalc = computeCatalogMrc(row.productId, row.lineQty);
+      if (recalc !== null) row.mrc = recalc;
+      rows[i] = row;
+      return { ...f, products: rows };
+    });
+  };
+  const addProduct = () => setForm(f => ({
+    ...f,
+    products: [...f.products, { productId: "", customLabel: "", lineQty: "", mrc: "", setup: "", term: "" }],
+  }));
   const removeProduct = (i) => setForm(f => ({ ...f, products: f.products.filter((_, idx) => idx !== i) }));
 
   const dealLineSummaries = useMemo(() => {
@@ -1062,7 +1118,10 @@ export default function DealSubmissionForm() {
                 </div>
                 <div className="mb-card-body">
                   <p className="mb-deal-step-hint">
-                    <strong>One row per product or service.</strong> Choosing a catalog product fills the default commissionable MRR; adjust if the deal differs (e.g. Brobot One Basic override, per-unit lines). Add setup and term per line. Use <strong>Add line</strong> for multiple products.
+                    <strong>1.</strong> Pick a product.&nbsp;
+                    <strong>2.</strong> Enter line count (# Lines).&nbsp;
+                    <strong>3.</strong> Check monthly (filled for you), setup, and term.&nbsp;
+                    Use <strong>Add line</strong> for another product on this deal.
                   </p>
                   {form.products.map((p, i) => (
                     <div className="mb-prod-row" key={i}>
@@ -1076,12 +1135,16 @@ export default function DealSubmissionForm() {
                             const defaultMrc = v ? PRODUCT_DEFAULT_MRC[v] : undefined;
                             setForm(f => {
                               const rows = [...f.products];
-                              rows[i] = {
+                              let row = {
                                 ...rows[i],
                                 productId: v,
-                                customLabel: v === "other" ? rows[i].customLabel : "",
+                                customLabel: "",
                                 mrc: defaultMrc !== undefined ? defaultMrc : rows[i].mrc,
+                                setup: defaultSetupFeeForProduct(v),
                               };
+                              const recalc = computeCatalogMrc(v, row.lineQty);
+                              if (recalc !== null) row.mrc = recalc;
+                              rows[i] = row;
                               return { ...f, products: rows };
                             });
                           }}
@@ -1090,18 +1153,21 @@ export default function DealSubmissionForm() {
                             <option key={opt.value || "placeholder"} value={opt.value}>{opt.label}</option>
                           ))}
                         </select>
-                        {p.productId === "other" && (
-                          <>
-                            <label className="mb-prod-col-label" style={{ marginTop: 10 }} htmlFor={`mb-custom-product-${i}`}>Describe the product or service</label>
-                            <input
-                              id={`mb-custom-product-${i}`}
-                              className="mb-input mb-prod-other-input"
-                              value={p.customLabel}
-                              onChange={e => setProduct(i, "customLabel", e.target.value)}
-                              placeholder="Type the product or service name"
-                            />
-                          </>
-                        )}
+                      </div>
+                      <div className="mb-prod-col">
+                        <div className="mb-prod-col-label"># Lines</div>
+                        <input
+                          className="mb-prod-input"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={999}
+                          step={1}
+                          value={p.lineQty ?? ""}
+                          onChange={e => patchProductRow(i, { lineQty: e.target.value })}
+                          placeholder="Qty"
+                          aria-label="Number of lines"
+                        />
                       </div>
                       <div className="mb-prod-col">
                         <div className="mb-prod-col-label">Monthly amount</div>
@@ -1115,7 +1181,19 @@ export default function DealSubmissionForm() {
                         <div className="mb-prod-col-label">Contract term</div>
                         <input className="mb-prod-input" value={p.term} onChange={e => setProduct(i, "term", e.target.value)} placeholder="Months" />
                       </div>
-                      <button type="button" className="mb-remove-btn" onClick={() => removeProduct(i)} disabled={form.products.length === 1} title={form.products.length === 1 ? "Keep at least one line" : "Remove line"}>×</button>
+                      <div className="mb-prod-col mb-prod-col-remove">
+                        <span className="mb-prod-col-label" aria-hidden="true">&#8203;</span>
+                        <button
+                          type="button"
+                          className="mb-remove-btn"
+                          onClick={() => removeProduct(i)}
+                          disabled={form.products.length === 1}
+                          title={form.products.length === 1 ? "Keep at least one line" : "Remove line"}
+                          aria-label="Remove line"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ))}
                   <button type="button" className="mb-add-btn" onClick={addProduct}>+ Add line</button>
