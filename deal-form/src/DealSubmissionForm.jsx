@@ -797,7 +797,19 @@ export default function DealSubmissionForm() {
 
   const openPaymentLink = () => {
     if (!selectedPaymentUrl) return;
-    window.open(selectedPaymentUrl, "_blank", "noopener,noreferrer");
+    // Use a real <a> click (like pasting the URL) — some browsers/Stripe handle this more reliably than
+    // window.open(..., "noreferrer"), which can alter navigation context for checkout.
+    try {
+      const a = document.createElement("a");
+      a.href = selectedPaymentUrl;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      window.open(selectedPaymentUrl, "_blank", "noopener");
+    }
   };
 
   const copyPaymentLink = async () => {
