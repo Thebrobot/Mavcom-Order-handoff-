@@ -151,6 +151,28 @@ const STYLES = `
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+  .lp-forgot-link {
+    background: none; border: none; padding: 0; cursor: pointer;
+    font-size: 12px; color: #64748b; text-decoration: underline;
+    text-underline-offset: 3px; text-align: right; align-self: flex-end;
+    margin-top: -10px;
+  }
+  .lp-forgot-link:hover { color: #94a3b8; }
+  .lp-success {
+    background: rgba(74,222,128,0.08);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #4ade80;
+    line-height: 1.5;
+  }
+  .lp-back-link {
+    background: none; border: none; padding: 0; cursor: pointer;
+    font-size: 13px; color: #64748b; text-decoration: underline;
+    text-underline-offset: 3px; margin-top: 4px;
+  }
+  .lp-back-link:hover { color: #94a3b8; }
 
   /* ── DEMO MODE ── */
   .lp-demo-banner {
@@ -206,11 +228,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // 'login' | 'forgot' | 'reset'
+  const [view, setView] = useState('login')
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotStatus, setForgotStatus] = useState(null) // null | 'sent' | 'error'
+  const [newPassword, setNewPassword] = useState('')
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
+  const [resetStatus, setResetStatus] = useState(null) // null | 'success' | 'error'
 
   useEffect(() => {
     if (sessionStorage.getItem('portalDemo')) {
       const role = sessionStorage.getItem('portalDemoRole')
       navigate(role === 'admin' ? '/portal/admin' : '/portal/dashboard', { replace: true })
+      return
+    }
+    // Detect recovery token in URL hash (from password reset email)
+    const hash = window.location.hash
+    if (hash.includes('type=recovery')) {
+      setView('reset')
       return
     }
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -253,6 +288,37 @@ export default function LoginPage() {
     }
   }
 
+  const handleForgot = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setForgotStatus(null)
+    const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/portal/login`,
+    })
+    setLoading(false)
+    setForgotStatus(err ? 'error' : 'sent')
+    if (err) setError(err.message)
+  }
+
+  const handleReset = async (e) => {
+    e.preventDefault()
+    if (newPassword !== newPasswordConfirm) {
+      setError('Passwords do not match.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    const { error: err } = await supabase.auth.updateUser({ password: newPassword })
+    setLoading(false)
+    if (err) {
+      setError(err.message)
+      setResetStatus('error')
+    } else {
+      setResetStatus('success')
+      setTimeout(() => navigate('/portal/dashboard', { replace: true }), 2000)
+    }
+  }
+
   return (
     <>
       <style>{STYLES}</style>
@@ -288,41 +354,71 @@ export default function LoginPage() {
             </>
           )}
 
-          <form className="lp-form" onSubmit={handleLogin}>
-            {error && <div className="lp-error">{error}</div>}
+          {view === 'login' && (
+            <form className="lp-form" onSubmit={handleLogin}>
+              {error && <div className="lp-error">{error}</div>}
+              <div className="lp-field">
+                <label className="lp-label" htmlFor="lp-email">Email</label>
+                <input id="lp-email" className="lp-input" type="email" autoComplete="email" required placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} />
+              </div>
+              <div className="lp-field">
+                <label className="lp-label" htmlFor="lp-password">Password</label>
+                <input id="lp-password" className="lp-input" type="password" autoComplete="current-password" required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+              </div>
+              <button type="button" className="lp-forgot-link" onClick={() => { setView('forgot'); setError(''); setForgotEmail(email); }}>
+                Forgot password?
+              </button>
+              <button className="lp-btn" type="submit" disabled={loading}>
+                {loading ? 'Signing in…' : 'Sign In →'}
+              </button>
+            </form>
+          )}
 
-            <div className="lp-field">
-              <label className="lp-label" htmlFor="lp-email">Email</label>
-              <input
-                id="lp-email"
-                className="lp-input"
-                type="email"
-                autoComplete="email"
-                required
-                placeholder="you@company.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
+          {view === 'forgot' && (
+            <form className="lp-form" onSubmit={handleForgot}>
+              {forgotStatus === 'sent' ? (
+                <div className="lp-success">Check your inbox — a password reset link has been sent to <strong>{forgotEmail}</strong>.</div>
+              ) : (
+                <>
+                  {error && <div className="lp-error">{error}</div>}
+                  <div className="lp-field">
+                    <label className="lp-label">Your Email</label>
+                    <input className="lp-input" type="email" required placeholder="you@company.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
+                  </div>
+                  <button className="lp-btn" type="submit" disabled={loading}>
+                    {loading ? 'Sending…' : 'Send Reset Link →'}
+                  </button>
+                </>
+              )}
+              <button type="button" className="lp-back-link" onClick={() => { setView('login'); setError(''); setForgotStatus(null); }}>
+                ← Back to sign in
+              </button>
+            </form>
+          )}
 
-            <div className="lp-field">
-              <label className="lp-label" htmlFor="lp-password">Password</label>
-              <input
-                id="lp-password"
-                className="lp-input"
-                type="password"
-                autoComplete="current-password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
-            </div>
-
-            <button className="lp-btn" type="submit" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign In →'}
-            </button>
-          </form>
+          {view === 'reset' && (
+            <form className="lp-form" onSubmit={handleReset}>
+              {resetStatus === 'success' ? (
+                <div className="lp-success">Password updated! Redirecting you to the portal…</div>
+              ) : (
+                <>
+                  <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>Choose a new password for your account.</p>
+                  {error && <div className="lp-error">{error}</div>}
+                  <div className="lp-field">
+                    <label className="lp-label">New Password</label>
+                    <input className="lp-input" type="password" required placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                  </div>
+                  <div className="lp-field">
+                    <label className="lp-label">Confirm Password</label>
+                    <input className="lp-input" type="password" required placeholder="••••••••" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} />
+                  </div>
+                  <button className="lp-btn" type="submit" disabled={loading}>
+                    {loading ? 'Saving…' : 'Set New Password →'}
+                  </button>
+                </>
+              )}
+            </form>
+          )}
 
           <div className="lp-footer">
             Need access? Contact <a href="mailto:info@thebrobot.com">info@thebrobot.com</a>
