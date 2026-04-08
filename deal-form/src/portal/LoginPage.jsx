@@ -248,14 +248,10 @@ export default function LoginPage() {
       setView('reset')
       return
     }
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-        navigate(profile?.is_admin ? '/portal/admin' : '/portal/dashboard', { replace: true })
+        const isAdmin = session.user.app_metadata?.is_admin === true
+        navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
       }
     })
   }, [navigate])
@@ -279,12 +275,8 @@ export default function LoginPage() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
-        navigate(profile?.is_admin ? '/portal/admin' : '/portal/dashboard', { replace: true })
+        const isAdmin = user.app_metadata?.is_admin === true
+        navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
       }
     } catch (err) {
       setError(err?.message ?? 'Login failed. Check your email and password.')

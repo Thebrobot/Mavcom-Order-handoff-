@@ -28,13 +28,8 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
         return
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
-
-      if (!cancelled) setState({ loading: false, user, isAdmin: profile?.is_admin ?? false })
+      const isAdmin = user.app_metadata?.is_admin === true
+      if (!cancelled) setState({ loading: false, user, isAdmin })
     }
 
     check()
