@@ -91,7 +91,7 @@ export const PAYMENT_LINK_CATEGORIES = [
         shortLabel: "4 Devices",
         label: "Brobot One Core (4 Devices)",
         priceUsd: 413,
-        url: "https://buy.stripe.com/9B614o1weE0X5ZN6nB6sw2p",
+        url: "https://buy.stripe.com/9B614o1wEe0X5ZN6nB6sw2p",
       },
       {
         id: "core-dev-5",
@@ -118,7 +118,7 @@ export const PAYMENT_LINK_CATEGORIES = [
         shortLabel: "1 Device",
         label: "Agent Broski (Ai Receptionist) (1 Device)",
         priceUsd: 852,
-        url: "https://buy.stripe.com/8x23cw1weE0X3RF7rF6sw2b",
+        url: "https://buy.stripe.com/8x23cw1wEe0X3RF7rF6sw2b",
       },
       {
         id: "aire-2",
