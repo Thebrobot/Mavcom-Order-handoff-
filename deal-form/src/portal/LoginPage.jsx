@@ -250,12 +250,8 @@ export default function LoginPage() {
     }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-        navigate(profile?.is_admin ? '/portal/admin' : '/portal/dashboard', { replace: true })
+        const { data: isAdmin } = await supabase.rpc('get_my_is_admin')
+        navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
       }
     })
   }, [navigate])
@@ -277,17 +273,9 @@ export default function LoginPage() {
       })
       if (authError) throw authError
 
-      // Check if admin → redirect to admin dashboard
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
-
-        navigate(profile?.is_admin ? '/portal/admin' : '/portal/dashboard', { replace: true })
-      }
+      // Check if admin via RPC (bypasses RLS reliably)
+      const { data: isAdmin } = await supabase.rpc('get_my_is_admin')
+      navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
     } catch (err) {
       setError(err?.message ?? 'Login failed. Check your email and password.')
     } finally {
