@@ -685,6 +685,13 @@ function buildWebhookPayload(form, dealLineSummaries) {
       name: form.rep_name,
       email: form.rep_email,
     },
+    /** Dedicated partner block — map these to GHL custom fields for commission tracking. */
+    partner: {
+      name:          form.rep_name,
+      email:         form.rep_email,
+      closerName:    form.closer_name?.trim() || null,
+      multiLocation: form.multi_location,
+    },
     agreement: {
       signedDate: form.signed_date,
       serviceStartDate: form.start_date,

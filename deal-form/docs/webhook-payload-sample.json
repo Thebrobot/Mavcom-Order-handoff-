@@ -50,6 +50,12 @@
     "name": "Rep Name",
     "email": "rep@example.com"
   },
+  "partner": {
+    "name": "Rep Name",
+    "email": "rep@example.com",
+    "closerName": null,
+    "multiLocation": false
+  },
   "agreement": {
     "signedDate": "2026-03-18",
     "serviceStartDate": "2026-04-01"
