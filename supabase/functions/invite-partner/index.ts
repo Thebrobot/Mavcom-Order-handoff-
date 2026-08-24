@@ -7,7 +7,6 @@ const CORS = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS })
   }
@@ -18,40 +17,43 @@ serve(async (req) => {
       return json({ error: 'No authorization header' }, 401)
     }
 
-    const supabaseUrl    = Deno.env.get('SUPABASE_URL')!
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl    = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    // Use service role client — bypasses RLS entirely
+    if (!supabaseUrl || !serviceRoleKey) {
+      return json({ error: 'Server misconfigured — missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' }, 500)
+    }
+
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
-    // Get caller's user ID from their JWT
     const jwt = authHeader.replace('Bearer ', '')
     const { data: { user: caller }, error: callerErr } = await adminClient.auth.getUser(jwt)
     if (callerErr || !caller) {
-      return json({ error: 'Invalid session' }, 401)
+      return json({ error: callerErr?.message || 'Invalid session' }, 401)
     }
 
-    // Check is_admin from profiles table (service role bypasses RLS)
     const { data: profile } = await adminClient
       .from('profiles')
       .select('is_admin')
       .eq('id', caller.id)
       .single()
 
-    // Also accept app_metadata.is_admin as fallback
     const isAdmin = profile?.is_admin === true || caller.app_metadata?.is_admin === true
     if (!isAdmin) {
       return json({ error: 'Admin access required' }, 403)
     }
 
-    // Parse request body
     const { email, full_name } = await req.json()
     if (!email) return json({ error: 'Email is required' }, 400)
 
-    // Send the invite using the service role key
+    const origin = req.headers.get('origin')
+      || req.headers.get('referer')?.replace(/\/+$/, '')
+      || Deno.env.get('SITE_URL')
+      || supabaseUrl
+
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: { full_name: full_name?.trim() || '' },
-      redirectTo: `${req.headers.get('origin') || 'https://your-vercel-app.vercel.app'}/portal/login`,
+      redirectTo: `${origin}/portal/login`,
     })
 
     if (error) return json({ error: error.message }, 400)
@@ -59,7 +61,7 @@ serve(async (req) => {
     return json({ success: true, userId: data.user?.id })
 
   } catch (err) {
-    return json({ error: err.message }, 500)
+    return json({ error: err.message ?? String(err) }, 500)
   }
 })
 

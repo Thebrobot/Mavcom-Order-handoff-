@@ -66,7 +66,96 @@ const STYLES = `
     color: #f1f5f9;
   }
   .pd-nav-actions { display: flex; align-items: center; gap: 12px; }
-  .pd-nav-user { font-size: 13px; color: #cbd5e1; }
+
+  /* ── HAMBURGER MENU (mobile) ── */
+  .pd-hamburger {
+    display: none; background: none; border: 1px solid #475569; border-radius: 8px;
+    padding: 6px 8px; cursor: pointer; color: #e2e8f0; font-size: 20px; line-height: 1;
+    transition: border-color 0.15s;
+  }
+  .pd-hamburger:hover { border-color: #94a3b8; }
+  .pd-mobile-menu {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  }
+  .pd-mobile-menu.open { display: flex; }
+  .pd-mobile-drawer {
+    margin-left: auto; width: 280px; max-width: 85vw; height: 100%;
+    background: #1e293b; border-left: 1px solid #334155;
+    padding: 20px; display: flex; flex-direction: column; gap: 6px;
+    overflow-y: auto;
+  }
+  .pd-mobile-drawer-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px; padding-bottom: 14px; border-bottom: 1px solid #334155;
+  }
+  .pd-mobile-drawer-name {
+    font-size: 15px; font-weight: 700; color: #f1f5f9;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  }
+  .pd-mobile-drawer-email {
+    font-size: 11px; color: #64748b; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pd-mobile-close {
+    background: none; border: none; color: #64748b; font-size: 22px;
+    cursor: pointer; padding: 2px; line-height: 1; margin-left: auto;
+  }
+  .pd-mobile-close:hover { color: #f1f5f9; }
+  .pd-mobile-item {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 14px 12px; border-radius: 10px; font-family: 'Barlow', sans-serif;
+    font-size: 15px; font-weight: 600; color: #e2e8f0; cursor: pointer;
+    transition: background 0.12s;
+  }
+  .pd-mobile-item:hover { background: rgba(255,255,255,0.05); }
+  .pd-mobile-divider { height: 1px; background: #334155; margin: 6px 0; }
+  .pd-nav-user { font-size: 13px; color: #cbd5e1; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .pd-nav-user:hover { color: #f5a623; }
+  .pd-avatar {
+    width: 28px; height: 28px; border-radius: 50%; background: #334155; border: 1px solid #475569;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: #f5a623;
+    flex-shrink: 0;
+  }
+  .pd-profile-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .pd-profile-card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    padding: 32px 28px 28px; width: 100%; max-width: 380px; position: relative;
+  }
+  .pd-profile-title {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800;
+    text-transform: uppercase; color: #f1f5f9; margin-bottom: 20px;
+  }
+  .pd-profile-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .pd-profile-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #94a3b8;
+  }
+  .pd-profile-input {
+    background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; font-family: 'Barlow', sans-serif;
+    color: #f1f5f9; outline: none; transition: border-color 0.15s;
+  }
+  .pd-profile-input:focus { border-color: #f5a623; }
+  .pd-profile-input:disabled { opacity: 0.5; }
+  .pd-profile-static { font-size: 14px; color: #64748b; padding: 2px 0; }
+  .pd-profile-save {
+    background: #f5a623; color: #000; border: none; border-radius: 10px;
+    padding: 12px 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px;
+    font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer; width: 100%; margin-top: 4px; transition: opacity 0.15s;
+  }
+  .pd-profile-save:hover:not(:disabled) { opacity: 0.9; }
+  .pd-profile-save:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pd-profile-close {
+    position: absolute; top: 12px; right: 14px; background: none; border: none;
+    color: #64748b; font-size: 20px; cursor: pointer; padding: 4px;
+  }
+  .pd-profile-close:hover { color: #f1f5f9; }
   .pd-btn-ghost {
     background: transparent;
     border: 1px solid #475569;
@@ -264,8 +353,8 @@ const STYLES = `
     .pd-nav-brand { gap: 6px; }
     .pd-nav-pill-p { display: none; }
     .pd-nav-title { font-size: 14px; }
-    .pd-nav-user { display: none; }
-    .pd-btn-ghost { padding: 6px 10px; font-size: 12px; }
+    .pd-nav-actions { display: none; }
+    .pd-hamburger { display: block; }
     .pd-search { width: 100%; }
     .pd-table-head { flex-direction: column; align-items: stretch; gap: 10px; }
     .pd-hide-mobile { display: none; }
@@ -325,6 +414,16 @@ export default function PartnerDashboard() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedDeal, setSelectedDeal] = useState(null)
+  const [profile, setProfile] = useState(null) // { full_name, email }
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [profileName, setProfileName] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const displayName = profile?.full_name?.trim() || user?.user_metadata?.full_name || ''
+  const initials = displayName
+    ? displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : (user?.email?.[0] || '?').toUpperCase()
 
   useEffect(() => {
     let cancelled = false
@@ -333,6 +432,7 @@ export default function PartnerDashboard() {
         const demoEmail = 'sarah@example.com'
         if (!cancelled) {
           setUser({ email: demoEmail, demo: true })
+          setProfile({ full_name: 'Sarah Johnson', email: demoEmail })
           setDeals(DEMO_DEALS.filter(d => d.rep_email === demoEmail))
           setLoading(false)
         }
@@ -341,10 +441,16 @@ export default function PartnerDashboard() {
       const { data: { user: u } } = await supabase.auth.getUser()
       if (!u || cancelled) return
       setUser(u)
-      const { data, error } = await supabase.from('deals').select('*').order('submitted_at', { ascending: false })
+
+      const [dealsRes, profileRes] = await Promise.all([
+        supabase.from('deals').select('*').order('submitted_at', { ascending: false }),
+        supabase.from('profiles').select('full_name, email').eq('id', u.id).single(),
+      ])
+
       if (!cancelled) {
-        if (error) console.error('[Portal] fetch deals:', error.message)
-        setDeals(data ?? [])
+        if (dealsRes.error) console.error('[Portal] fetch deals:', dealsRes.error.message)
+        setDeals(dealsRes.data ?? [])
+        if (profileRes.data) setProfile(profileRes.data)
         setLoading(false)
       }
     }
@@ -357,6 +463,25 @@ export default function PartnerDashboard() {
     sessionStorage.removeItem('portalDemoRole')
     await supabase.auth.signOut()
     navigate('/portal/login', { replace: true })
+  }
+
+  const openProfile = () => {
+    setProfileName(profile?.full_name || '')
+    setProfileOpen(true)
+  }
+
+  const saveProfile = async () => {
+    if (!user?.id) return
+    setProfileSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: profileName.trim() })
+      .eq('id', user.id)
+    setProfileSaving(false)
+    if (!error) {
+      setProfile(prev => ({ ...prev, full_name: profileName.trim() }))
+      setProfileOpen(false)
+    }
   }
 
   const handleUpdate = (updated) => {
@@ -408,11 +533,38 @@ export default function PartnerDashboard() {
             <span className="pd-nav-title">My Deals</span>
           </div>
           <div className="pd-nav-actions">
-            <span className="pd-nav-user">{user?.email}</span>
+            <span className="pd-nav-user" onClick={openProfile} title="Edit profile">
+              <span className="pd-avatar">{initials}</span>
+              <span className="pd-nav-user-text">{displayName || user?.email}</span>
+            </span>
             <button className="pd-btn-ghost" onClick={() => navigate('/')}>+ Submit Deal</button>
             <button className="pd-btn-ghost" onClick={handleSignOut}>Sign out</button>
           </div>
+          <button className="pd-hamburger" onClick={() => setMobileMenuOpen(true)}>☰</button>
         </nav>
+
+        <div className={`pd-mobile-menu${mobileMenuOpen ? ' open' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+          <div className="pd-mobile-drawer" onClick={e => e.stopPropagation()}>
+            <div className="pd-mobile-drawer-head">
+              <span className="pd-avatar">{initials}</span>
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div className="pd-mobile-drawer-name">{displayName || user?.email}</div>
+                {displayName && <div className="pd-mobile-drawer-email">{user?.email}</div>}
+              </div>
+              <button className="pd-mobile-close" onClick={() => setMobileMenuOpen(false)}>✕</button>
+            </div>
+            <button className="pd-mobile-item" onClick={() => { openProfile(); setMobileMenuOpen(false) }}>
+              Edit Profile
+            </button>
+            <button className="pd-mobile-item" onClick={() => { navigate('/'); setMobileMenuOpen(false) }}>
+              + Submit Deal
+            </button>
+            <div className="pd-mobile-divider" />
+            <button className="pd-mobile-item" style={{ color: '#f87171' }} onClick={() => { handleSignOut(); setMobileMenuOpen(false) }}>
+              Sign out
+            </button>
+          </div>
+        </div>
 
         <div className="pd-body">
           <div className="pd-page-head">
@@ -553,6 +705,38 @@ export default function PartnerDashboard() {
           onClose={() => setSelectedDeal(null)}
           onUpdate={handleUpdate}
         />
+      )}
+
+      {profileOpen && (
+        <div className="pd-profile-overlay" onClick={() => setProfileOpen(false)}>
+          <div className="pd-profile-card" onClick={e => e.stopPropagation()}>
+            <button className="pd-profile-close" onClick={() => setProfileOpen(false)}>✕</button>
+            <div className="pd-profile-title">My Profile</div>
+            <div className="pd-profile-field">
+              <label className="pd-profile-label">Display Name</label>
+              <input
+                className="pd-profile-input"
+                type="text"
+                placeholder="Your name"
+                value={profileName}
+                onChange={e => setProfileName(e.target.value)}
+                disabled={profileSaving}
+                autoFocus
+              />
+            </div>
+            <div className="pd-profile-field">
+              <label className="pd-profile-label">Email</label>
+              <div className="pd-profile-static">{user?.email}</div>
+            </div>
+            <button
+              className="pd-profile-save"
+              onClick={saveProfile}
+              disabled={profileSaving || !profileName.trim()}
+            >
+              {profileSaving ? 'Saving…' : 'Save Profile'}
+            </button>
+          </div>
+        </div>
       )}
     </>
   )

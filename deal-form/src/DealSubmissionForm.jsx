@@ -569,6 +569,16 @@ const STYLES = `
     .mb-card-deal-lines .mb-remove-btn { align-self: center; }
     .mb-deal-summary-row { grid-template-columns: 1fr; }
   }
+
+  .mb-chat-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2147482999;
+    background: rgba(15, 23, 42, 0.5);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
 `;
 
 const STEPS = ["Client", "Deal", "Billing", "Rep", "Files"];
@@ -842,15 +852,81 @@ export default function DealSubmissionForm() {
     }
   };
 
+  // Brobot Copilot now opens the GHL chat widget in-page instead of linking out to ChatGPT.
+  // The widget script (pasted into index.html) fires `LC_chatWidgetLoaded` on `window` once ready
+  // and exposes `window.leadConnector.chatWidget.openWidget()`. If the widget hasn't loaded for any
+  // reason (slow network, script blocked, not yet configured), clicking falls back to the old GPT link
+  // so the button never dead-ends.
+  const [chatWidgetReady, setChatWidgetReady] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.leadConnector && window.leadConnector.chatWidget) {
+      setChatWidgetReady(true);
+      return;
+    }
+    const onLoaded = () => setChatWidgetReady(true);
+    window.addEventListener("LC_chatWidgetLoaded", onLoaded);
+    return () => window.removeEventListener("LC_chatWidgetLoaded", onLoaded);
+  }, []);
+
+  const closeChat = () => {
+    window.leadConnector?.chatWidget?.closeWidget?.();
+    document.querySelector("chat-widget")?.classList.remove("mb-chat-open");
+    setChatOpen(false);
+  };
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") closeChat(); };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [chatOpen]);
+
+  const openBrobotCopilot = () => {
+    const api = typeof window !== "undefined" ? window.leadConnector?.chatWidget : null;
+    if (!api) {
+      // Fallback: widget script not loaded yet — don't dead-end the rep, send them to the GPT.
+      window.open(DEFAULT_VITE_LINK_AI_KNOWLEDGE, "_blank", "noopener");
+      return;
+    }
+    if (chatOpen) {
+      closeChat();
+      return;
+    }
+    api.openWidget();
+    document.querySelector("chat-widget")?.classList.add("mb-chat-open");
+    setChatOpen(true);
+  };
+
+  // Optional: set VITE_REP_SMS_NUMBER (e.g. "+15551234567") to show a "text us" pill alongside
+  // the Copilot button, so reps can text the same knowledge-base bot instead of opening the chat box.
+  const REP_SMS_NUMBER = envUrl(import.meta.env.VITE_REP_SMS_NUMBER, "");
+
   const quickResourceLinks = useMemo(() => {
     // Static `import.meta.env.VITE_*` so Vite always inlines at build; dynamic `import.meta.env[key]` is brittle.
-    const ai = envUrl(import.meta.env.VITE_LINK_AI_KNOWLEDGE, DEFAULT_VITE_LINK_AI_KNOWLEDGE);
     const terms = envUrl(import.meta.env.VITE_LINK_TERMS_LOA, DEFAULT_VITE_LINK_TERMS_LOA);
-    return [
-      { key: "ai-knowledge", href: ai, label: "Brobot Copilot" },
-      { key: "terms-loa", href: terms, label: "Terms & LOA (e-sign)" },
+    const links = [
+      { key: "ai-knowledge", type: "chat-widget", label: "Brobot Copilot" },
+      { key: "terms-loa", type: "link", href: terms, label: "Terms & LOA (e-sign)" },
     ];
-  }, []);
+    if (REP_SMS_NUMBER) {
+      links.push({
+        key: "text-us",
+        type: "link",
+        href: `sms:${REP_SMS_NUMBER}`,
+        label: `Text Us: ${REP_SMS_NUMBER}`,
+      });
+    }
+    return links;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [REP_SMS_NUMBER]);
 
   const goNext = () => { if (step < 5) setStep(s => s + 1); };
   const goPrev = () => { if (step > 1) setStep(s => s - 1); };
@@ -1047,8 +1123,23 @@ export default function DealSubmissionForm() {
                 ) : null}
               </div>
               <div className="mb-quick-links-pills">
-                {quickResourceLinks.map(item =>
-                  item.href ? (
+                {quickResourceLinks.map(item => {
+                  if (item.type === "chat-widget") {
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className="mb-pill mb-pill-b mb-quick-link-btn"
+                        onClick={openBrobotCopilot}
+                        aria-expanded={chatOpen}
+                        title={chatWidgetReady ? undefined : "Opens the chat (falls back to the GPT link if the widget hasn't loaded)"}
+                        style={{ backgroundColor: "#f5a623", color: "#000", cursor: "pointer", border: "none" }}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  }
+                  return item.href ? (
                     <a
                       key={item.key}
                       className="mb-pill mb-pill-b mb-quick-link-btn"
@@ -1068,8 +1159,8 @@ export default function DealSubmissionForm() {
                     >
                       {item.label}
                     </span>
-                  ),
-                )}
+                  );
+                })}
               </div>
             </div>
           </nav>
@@ -1482,6 +1573,14 @@ export default function DealSubmissionForm() {
 
         </div>
       </div>
+      {chatOpen ? (
+        <button
+          type="button"
+          className="mb-chat-backdrop"
+          aria-label="Close Brobot Copilot"
+          onClick={closeChat}
+        />
+      ) : null}
     </>
   );
 }

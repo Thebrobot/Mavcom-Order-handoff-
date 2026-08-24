@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient.js'
 import { DEMO_DEALS } from './demoData.js'
@@ -45,7 +45,8 @@ const STYLES = `
     justify-content: space-between;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 100;
+    overflow: visible;
   }
   .ad-nav-brand { display: flex; align-items: center; gap: 10px; }
   .ad-nav-pill {
@@ -61,7 +62,59 @@ const STYLES = `
   .ad-nav-pill-a { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
   .ad-nav-title { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; color: #f1f5f9; }
   .ad-nav-actions { display: flex; align-items: center; gap: 12px; }
-  .ad-nav-user { font-size: 13px; color: #f1f5f9; }
+  .ad-nav-user {
+    font-size: 13px; color: #cbd5e1; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    max-width: 220px;
+  }
+  .ad-nav-user:hover { color: #f5a623; }
+  .ad-nav-user-text {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ad-avatar {
+    width: 28px; height: 28px; border-radius: 50%; background: #334155; border: 1px solid #475569;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: #f5a623;
+    flex-shrink: 0;
+  }
+  .ad-profile-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .ad-profile-card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    padding: 32px 28px 28px; width: 100%; max-width: 380px; position: relative;
+  }
+  .ad-profile-title {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800;
+    text-transform: uppercase; color: #f1f5f9; margin-bottom: 20px;
+  }
+  .ad-profile-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .ad-profile-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #94a3b8;
+  }
+  .ad-profile-input {
+    background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; font-family: 'Barlow', sans-serif;
+    color: #f1f5f9; outline: none; transition: border-color 0.15s;
+  }
+  .ad-profile-input:focus { border-color: #f5a623; }
+  .ad-profile-input:disabled { opacity: 0.5; }
+  .ad-profile-static { font-size: 14px; color: #64748b; padding: 2px 0; }
+  .ad-profile-save {
+    background: #f5a623; color: #000; border: none; border-radius: 10px;
+    padding: 12px 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px;
+    font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer; width: 100%; margin-top: 4px; transition: opacity 0.15s;
+  }
+  .ad-profile-save:hover:not(:disabled) { opacity: 0.9; }
+  .ad-profile-save:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ad-profile-close {
+    position: absolute; top: 12px; right: 14px; background: none; border: none;
+    color: #64748b; font-size: 20px; cursor: pointer; padding: 4px;
+  }
+  .ad-profile-close:hover { color: #f1f5f9; }
   .ad-btn-ghost {
     background: transparent;
     border: 1px solid #475569;
@@ -76,8 +129,57 @@ const STYLES = `
   }
   .ad-btn-ghost:hover { border-color: #94a3b8; color: #f1f5f9; }
 
+  /* ── HAMBURGER MENU (mobile) ── */
+  .ad-hamburger {
+    display: none; background: none; border: 1px solid #475569; border-radius: 8px;
+    padding: 6px 8px; cursor: pointer; color: #e2e8f0; font-size: 20px; line-height: 1;
+    transition: border-color 0.15s;
+  }
+  .ad-hamburger:hover { border-color: #94a3b8; }
+  .ad-mobile-menu {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  }
+  .ad-mobile-menu.open { display: flex; }
+  .ad-mobile-drawer {
+    margin-left: auto; width: 280px; max-width: 85vw; height: 100%;
+    background: #1e293b; border-left: 1px solid #334155;
+    padding: 20px; display: flex; flex-direction: column; gap: 6px;
+    overflow-y: auto;
+  }
+  .ad-mobile-drawer-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px; padding-bottom: 14px; border-bottom: 1px solid #334155;
+  }
+  .ad-mobile-drawer-name {
+    font-size: 15px; font-weight: 700; color: #f1f5f9;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ad-mobile-drawer-email {
+    font-size: 11px; color: #64748b; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ad-mobile-close {
+    background: none; border: none; color: #64748b; font-size: 22px;
+    cursor: pointer; padding: 2px; line-height: 1; margin-left: auto;
+  }
+  .ad-mobile-close:hover { color: #f1f5f9; }
+  .ad-mobile-item {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 14px 12px; border-radius: 10px; font-family: 'Barlow', sans-serif;
+    font-size: 15px; font-weight: 600; color: #e2e8f0; cursor: pointer;
+    transition: background 0.12s;
+  }
+  .ad-mobile-item:hover { background: rgba(255,255,255,0.05); }
+  .ad-mobile-item small { display: block; font-size: 11px; font-weight: 400; color: #64748b; margin-top: 2px; }
+  .ad-mobile-divider { height: 1px; background: #334155; margin: 6px 0; }
+  .ad-mobile-section-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #64748b; padding: 8px 12px 4px;
+  }
+
   /* ── PARTNER VIEW DROPDOWN ── */
-  .ad-partner-drop-wrap { position: relative; }
+  .ad-partner-drop-wrap { position: relative; z-index: 1; }
   .ad-partner-drop-menu {
     position: absolute;
     top: calc(100% + 6px);
@@ -86,7 +188,7 @@ const STYLES = `
     border: 1px solid #334155;
     border-radius: 10px;
     min-width: 220px;
-    z-index: 100;
+    z-index: 200;
     box-shadow: 0 12px 32px rgba(0,0,0,0.5);
     overflow: hidden;
   }
@@ -249,6 +351,31 @@ const STYLES = `
   .ad-payout-mini-table tr:last-child td { border-bottom: none; }
   .ad-payout-mini-wrap { background: #0f172a; border-radius: 10px; overflow: hidden; margin-top: 4px; width: 100%; }
 
+  /* ── PAYOUT CARDS (mobile replacement for table) ── */
+  .ad-payout-cards { display: none; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .ad-payout-card {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 14px 16px;
+  }
+  .ad-payout-card-head {
+    display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;
+  }
+  .ad-payout-card-client {
+    font-size: 14px; font-weight: 700; color: #f1f5f9; line-height: 1.3;
+  }
+  .ad-payout-card-biz { font-size: 12px; font-weight: 400; color: #94a3b8; }
+  .ad-payout-card-total {
+    font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700;
+    color: #f1f5f9; white-space: nowrap;
+  }
+  .ad-payout-card-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 3px 0; font-size: 12px;
+  }
+  .ad-payout-card-label { color: #94a3b8; }
+  .ad-payout-card-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ad-payout-card-partner { font-size: 11px; color: #64748b; margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e293b; }
+  .ad-payout-card-services { font-size: 11px; color: #64748b; margin-bottom: 8px; }
+
   .ad-table-wrap { background: #1e293b; border: 1px solid #334155; border-radius: 14px; overflow: hidden; width: 100%; }
   .ad-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
   .ad-table { width: 100%; border-collapse: collapse; min-width: 420px; }
@@ -346,8 +473,8 @@ const STYLES = `
     .ad-nav-brand { gap: 6px; }
     .ad-nav-pill-a { display: none; }
     .ad-nav-title { font-size: 14px; }
-    .ad-nav-user { display: none; }
-    .ad-btn-ghost { padding: 6px 10px; font-size: 12px; }
+    .ad-nav-actions { display: none; }
+    .ad-hamburger { display: block; }
     .ad-search { width: 100%; }
     .ad-filters { flex-direction: column; align-items: stretch; gap: 8px; }
     .ad-filter-count { margin-left: 0; }
@@ -355,6 +482,12 @@ const STYLES = `
     .ad-table th, .ad-table td { padding: 12px 10px; }
     .ad-stats { grid-template-columns: repeat(2, 1fr); }
     .ad-stats-section { margin-bottom: 20px; }
+    .ad-payout-controls { flex-direction: column; align-items: stretch !important; gap: 10px; }
+    .ad-payout-month { width: 100%; }
+    .ad-payout-download { margin-left: 0; width: 100%; justify-content: center; }
+    .ad-payout-summary { text-align: center; }
+    .ad-payout-mini-wrap { display: none; }
+    .ad-payout-cards { display: flex; }
   }
 
   /* ── INVITE MODAL ── */
@@ -466,13 +599,28 @@ export default function AdminDashboard() {
   const [payoutPartner, setPayoutPartner] = useState('all')
   const [viewAsPartner, setViewAsPartner] = useState(null) // {email, name} or null
   const [partnerDropOpen, setPartnerDropOpen] = useState(false)
+  const [allPartners, setAllPartners] = useState([]) // [{email, name}] from profiles table
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profile, setProfile] = useState(null) // { full_name, email }
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [profileName, setProfileName] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const partnerDropRef = useRef(null)
 
-  // Close dropdown when clicking outside
+  const displayName = profile?.full_name?.trim() || user?.user_metadata?.full_name || ''
+  const initials = displayName
+    ? displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : (user?.email?.[0] || '?').toUpperCase()
+
+  // Close partner dropdown on outside pointer down (desktop). Avoids document click + once:true racing with React updates.
   useEffect(() => {
     if (!partnerDropOpen) return
-    const close = () => setPartnerDropOpen(false)
-    document.addEventListener('click', close, { once: true })
-    return () => document.removeEventListener('click', close)
+    const onPointerDown = (e) => {
+      const root = partnerDropRef.current
+      if (root && !root.contains(e.target)) setPartnerDropOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
   }, [partnerDropOpen])
 
   useEffect(() => {
@@ -480,7 +628,9 @@ export default function AdminDashboard() {
     async function load() {
       if (sessionStorage.getItem('portalDemo')) {
         if (!cancelled) {
-          setUser({ email: 'admin@demo.com', demo: true })
+          const demoEmail = 'admin@demo.com'
+          setUser({ email: demoEmail, demo: true })
+          setProfile({ full_name: 'Demo Admin', email: demoEmail })
           setDeals([...DEMO_DEALS])
           setLoading(false)
         }
@@ -489,10 +639,20 @@ export default function AdminDashboard() {
       const { data: { user: u } } = await supabase.auth.getUser()
       if (!u || cancelled) return
       setUser(u)
-      const { data, error } = await supabase.from('deals').select('*').order('submitted_at', { ascending: false })
+
+      const [dealsRes, profilesRes, myProfileRes] = await Promise.all([
+        supabase.from('deals').select('*').order('submitted_at', { ascending: false }),
+        supabase.from('profiles').select('id, email, full_name, is_admin').eq('is_admin', false),
+        supabase.from('profiles').select('full_name, email').eq('id', u.id).single(),
+      ])
+
       if (!cancelled) {
-        if (error) console.error('[Admin] fetch deals:', error.message)
-        setDeals(data ?? [])
+        if (dealsRes.error) console.error('[Admin] fetch deals:', dealsRes.error.message)
+        setDeals(dealsRes.data ?? [])
+        setAllPartners(
+          (profilesRes.data ?? []).map(p => ({ email: p.email, name: p.full_name || '' }))
+        )
+        if (myProfileRes.data) setProfile(myProfileRes.data)
         setLoading(false)
       }
     }
@@ -505,6 +665,35 @@ export default function AdminDashboard() {
     sessionStorage.removeItem('portalDemoRole')
     await supabase.auth.signOut()
     navigate('/portal/login', { replace: true })
+  }
+
+  const openProfile = () => {
+    setProfileName(profile?.full_name || '')
+    setProfileOpen(true)
+  }
+
+  const saveProfile = async () => {
+    if (!profileName.trim()) return
+    setProfileSaving(true)
+    if (user?.demo) {
+      setProfile(prev => ({ ...prev, full_name: profileName.trim(), email: prev?.email ?? user?.email }))
+      setProfileOpen(false)
+      setProfileSaving(false)
+      return
+    }
+    if (!user?.id) {
+      setProfileSaving(false)
+      return
+    }
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: profileName.trim() })
+      .eq('id', user.id)
+    setProfileSaving(false)
+    if (!error) {
+      setProfile(prev => ({ ...prev, full_name: profileName.trim() }))
+      setProfileOpen(false)
+    }
   }
 
   const handleUpdate = (updated) => {
@@ -559,8 +748,12 @@ export default function AdminDashboard() {
         body: { email: inviteEmail.trim(), full_name: inviteName.trim() },
       })
       if (error) {
-        // Extract the actual message from the function response body if available
-        const detail = data?.error || error.message
+        let detail = error.message
+        try {
+          const body = await error.context?.json?.()
+          if (body?.error) detail = body.error
+        } catch { /* response already consumed or not JSON */ }
+        if (data?.error) detail = data.error
         throw new Error(detail)
       }
       setInviteStatus('success')
@@ -673,12 +866,13 @@ export default function AdminDashboard() {
     return rows
   }, [])
 
-  // Unique partner list derived from ALL deals (for the selector)
+  // Combined partner list: profiles table (invited users) + any deal rep_emails not yet in profiles
   const payoutPartnerOptions = useMemo(() => {
     const seen = new Map()
+    allPartners.forEach(p => { if (p.email) seen.set(p.email, p.name || p.email) })
     deals.forEach(d => { if (d.rep_email && !seen.has(d.rep_email)) seen.set(d.rep_email, d.rep_name || d.rep_email) })
     return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]))
-  }, [deals])
+  }, [deals, allPartners])
 
   const payoutReportFiltered = payoutPartner === 'all'
     ? payoutReportRows
@@ -758,13 +952,27 @@ export default function AdminDashboard() {
             <span className="ad-nav-title">All Deals</span>
           </div>
           <div className="ad-nav-actions">
-            <span className="ad-nav-user">{user?.email}</span>
+            <span
+              className="ad-nav-user"
+              onClick={openProfile}
+              title="Edit profile"
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProfile() } }}
+            >
+              <span className="ad-avatar">{initials}</span>
+              <span className="ad-nav-user-text">{displayName || user?.email}</span>
+            </span>
             <button className="ad-btn-ghost" onClick={() => navigate('/')}>+ Submit Deal</button>
             <button className="ad-btn-ghost" style={{ borderColor: 'rgba(245,166,35,0.4)', color: '#f5a623' }} onClick={() => setInviteOpen(true)}>+ Invite Partner</button>
-            <div className="ad-partner-drop-wrap">
+            <div className="ad-partner-drop-wrap" ref={partnerDropRef}>
               <button
+                type="button"
                 className="ad-btn-ghost"
-                onClick={() => setPartnerDropOpen(o => !o)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPartnerDropOpen(o => !o)
+                }}
                 style={viewAsPartner ? { borderColor: 'rgba(56,189,248,0.4)', color: '#7dd3fc' } : {}}
               >
                 {viewAsPartner ? `Viewing: ${viewAsPartner.name || viewAsPartner.email}` : 'Partner View ▾'}
@@ -798,7 +1006,54 @@ export default function AdminDashboard() {
             </div>
             <button className="ad-btn-ghost" onClick={handleSignOut}>Sign out</button>
           </div>
+          <button className="ad-hamburger" onClick={() => setMobileMenuOpen(true)}>☰</button>
         </nav>
+
+        <div className={`ad-mobile-menu${mobileMenuOpen ? ' open' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+          <div className="ad-mobile-drawer" onClick={e => e.stopPropagation()}>
+            <div className="ad-mobile-drawer-head">
+              <span className="ad-avatar">{initials}</span>
+              <div style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                <div className="ad-mobile-drawer-name">{displayName || user?.email}</div>
+                {displayName ? <div className="ad-mobile-drawer-email">{user?.email}</div> : null}
+              </div>
+              <button className="ad-mobile-close" onClick={() => setMobileMenuOpen(false)}>✕</button>
+            </div>
+            <button className="ad-mobile-item" onClick={() => { openProfile(); setMobileMenuOpen(false) }}>
+              Edit Profile
+            </button>
+            <button className="ad-mobile-item" onClick={() => { navigate('/'); setMobileMenuOpen(false) }}>
+              + Submit Deal
+            </button>
+            <button className="ad-mobile-item" style={{ color: '#f5a623' }} onClick={() => { setInviteOpen(true); setMobileMenuOpen(false) }}>
+              + Invite Partner
+            </button>
+            <div className="ad-mobile-divider" />
+            <div className="ad-mobile-section-label">View as partner</div>
+            {payoutPartnerOptions.length === 0 && (
+              <button className="ad-mobile-item" disabled style={{ color: '#475569' }}>No partners yet</button>
+            )}
+            {payoutPartnerOptions.map(([email, name]) => (
+              <button
+                key={email}
+                className="ad-mobile-item"
+                style={viewAsPartner?.email === email ? { background: 'rgba(56,189,248,0.1)', color: '#7dd3fc' } : {}}
+                onClick={() => { setViewAsPartner({ email, name }); setMobileMenuOpen(false) }}
+              >
+                {name}<small>{email}</small>
+              </button>
+            ))}
+            {viewAsPartner && (
+              <button className="ad-mobile-item" style={{ color: '#f87171' }} onClick={() => { setViewAsPartner(null); setMobileMenuOpen(false) }}>
+                ✕ Exit Partner View
+              </button>
+            )}
+            <div className="ad-mobile-divider" />
+            <button className="ad-mobile-item" style={{ color: '#f87171' }} onClick={() => { handleSignOut(); setMobileMenuOpen(false) }}>
+              Sign out
+            </button>
+          </div>
+        </div>
 
         {viewAsPartner && (
           <div className="ad-subview-banner">
@@ -970,7 +1225,7 @@ export default function AdminDashboard() {
 
           {/* ── PAYOUT REPORT ── */}
           <div className="ad-payout-bar" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+            <div className="ad-payout-controls" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
               <span className="ad-payout-label">Payout Report for:</span>
               <input
                 className="ad-payout-month"
@@ -1001,6 +1256,7 @@ export default function AdminDashboard() {
               </button>
             </div>
             {payoutReportFiltered.length > 0 && (
+              <>
               <div className="ad-payout-mini-wrap">
                 <table className="ad-payout-mini-table">
                   <thead>
@@ -1037,6 +1293,52 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+              <div className="ad-payout-cards">
+                {payoutReportFiltered.map((r, i) => {
+                  let products = []
+                  try { products = Array.isArray(r.deal.products_json) ? r.deal.products_json : JSON.parse(r.deal.products_json || '[]') } catch {}
+                  const services = products.map(p => p.productLabel || p.productId).join(', ')
+                  const types = [r.upfront > 0 && 'Upfront', r.residual > 0 && 'Residual'].filter(Boolean).join(' + ')
+                  return (
+                    <div className="ad-payout-card" key={i}>
+                      <div className="ad-payout-card-head">
+                        <div>
+                          <div className="ad-payout-card-client">{r.deal.client_name}</div>
+                          <div className="ad-payout-card-biz">{r.deal.business_name}</div>
+                        </div>
+                        <div className="ad-payout-card-total">{fmt(r.upfront + r.residual)}</div>
+                      </div>
+                      {services && <div className="ad-payout-card-services">{services}</div>}
+                      {r.productComm > 0 && (
+                        <div className="ad-payout-card-row">
+                          <span className="ad-payout-card-label">Product Comm.</span>
+                          <span className="ad-payout-card-val" style={{ color: '#4ade80' }}>{fmt(r.productComm)}</span>
+                        </div>
+                      )}
+                      {r.setupFeeComm > 0 && (
+                        <div className="ad-payout-card-row">
+                          <span className="ad-payout-card-label">Setup Fee Comm.</span>
+                          <span className="ad-payout-card-val" style={{ color: '#c084fc' }}>{fmt(r.setupFeeComm)}</span>
+                        </div>
+                      )}
+                      {r.residual > 0 && (
+                        <div className="ad-payout-card-row">
+                          <span className="ad-payout-card-label">Residual</span>
+                          <span className="ad-payout-card-val" style={{ color: '#38bdf8' }}>{fmt(r.residual)}</span>
+                        </div>
+                      )}
+                      <div className="ad-payout-card-row">
+                        <span className="ad-payout-card-label">Type</span>
+                        <span className="ad-payout-card-val" style={{ color: r.upfront > 0 && r.residual > 0 ? '#c084fc' : r.upfront > 0 ? '#4ade80' : '#38bdf8', fontWeight: 700 }}>{types}</span>
+                      </div>
+                      {payoutPartner === 'all' && (
+                        <div className="ad-payout-card-partner">{r.deal.rep_name || r.deal.rep_email}</div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              </>
             )}
           </div>
 
@@ -1163,6 +1465,39 @@ export default function AdminDashboard() {
           onClose={() => setSelectedDeal(null)}
           onUpdate={handleUpdate}
         />
+      )}
+
+      {profileOpen && (
+        <div className="ad-profile-overlay" onClick={() => setProfileOpen(false)}>
+          <div className="ad-profile-card" onClick={e => e.stopPropagation()}>
+            <button type="button" className="ad-profile-close" onClick={() => setProfileOpen(false)}>✕</button>
+            <div className="ad-profile-title">My Profile</div>
+            <div className="ad-profile-field">
+              <label className="ad-profile-label">Display Name</label>
+              <input
+                className="ad-profile-input"
+                type="text"
+                placeholder="Your name"
+                value={profileName}
+                onChange={e => setProfileName(e.target.value)}
+                disabled={profileSaving}
+                autoFocus
+              />
+            </div>
+            <div className="ad-profile-field">
+              <label className="ad-profile-label">Email</label>
+              <div className="ad-profile-static">{user?.email}</div>
+            </div>
+            <button
+              type="button"
+              className="ad-profile-save"
+              onClick={saveProfile}
+              disabled={profileSaving || !profileName.trim()}
+            >
+              {profileSaving ? 'Saving…' : 'Save Profile'}
+            </button>
+          </div>
+        </div>
       )}
 
       {inviteOpen && (

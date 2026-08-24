@@ -2,9 +2,20 @@ import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient.js'
 
+async function checkAdmin(user) {
+  if (!user) return false
+  if (user.app_metadata?.is_admin === true) return true
+  const { data } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+  return data?.is_admin === true
+}
+
 /**
  * Wraps a route so only authenticated users can access it.
- * adminOnly=true additionally requires profiles.is_admin = true.
+ * adminOnly=true additionally requires is_admin (app_metadata or profiles table).
  */
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const [state, setState] = useState({ loading: true, user: null, isAdmin: false })
@@ -12,36 +23,31 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   useEffect(() => {
     let cancelled = false
 
-    async function check() {
-      // Demo mode bypass — no real auth needed
-      if (sessionStorage.getItem('portalDemo')) {
-        const demoRole = sessionStorage.getItem('portalDemoRole') ?? 'rep'
-        if (!cancelled) setState({ loading: false, user: { email: demoRole === 'admin' ? 'admin@demo.com' : 'rep@demo.com', demo: true }, isAdmin: demoRole === 'admin' })
-        return
-      }
-
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user ?? null
-
+    async function resolve(user) {
       if (!user) {
         if (!cancelled) setState({ loading: false, user: null, isAdmin: false })
         return
       }
-
-      const isAdmin = user.app_metadata?.is_admin === true
+      const isAdmin = await checkAdmin(user)
       if (!cancelled) setState({ loading: false, user, isAdmin })
     }
 
-    check()
+    if (sessionStorage.getItem('portalDemo')) {
+      const demoRole = sessionStorage.getItem('portalDemoRole') ?? 'rep'
+      setState({
+        loading: false,
+        user: { email: demoRole === 'admin' ? 'admin@demo.com' : 'rep@demo.com', demo: true },
+        isAdmin: demoRole === 'admin',
+      })
+      return
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Never let auth state changes override an active demo session
-      if (sessionStorage.getItem('portalDemo')) return
-      if (!cancelled) {
-        const user = session?.user ?? null
-        setState(s => ({ ...s, user, loading: false }))
-      }
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (sessionStorage.getItem('portalDemo')) return
+        resolve(session?.user ?? null)
+      },
+    )
 
     return () => {
       cancelled = true

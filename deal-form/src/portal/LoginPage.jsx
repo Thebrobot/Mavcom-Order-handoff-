@@ -242,17 +242,20 @@ export default function LoginPage() {
       navigate(role === 'admin' ? '/portal/admin' : '/portal/dashboard', { replace: true })
       return
     }
-    // Detect recovery token in URL hash (from password reset email)
     const hash = window.location.hash
     if (hash.includes('type=recovery')) {
       setView('reset')
       return
     }
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const isAdmin = session.user.app_metadata?.is_admin === true
-        navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) return
+      const user = session.user
+      let isAdmin = user.app_metadata?.is_admin === true
+      if (!isAdmin) {
+        const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+        isAdmin = data?.is_admin === true
       }
+      navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
     })
   }, [navigate])
 
@@ -275,7 +278,11 @@ export default function LoginPage() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const isAdmin = user.app_metadata?.is_admin === true
+        let isAdmin = user.app_metadata?.is_admin === true
+        if (!isAdmin) {
+          const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+          isAdmin = data?.is_admin === true
+        }
         navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true })
       }
     } catch (err) {
@@ -312,7 +319,13 @@ export default function LoginPage() {
       setResetStatus('error')
     } else {
       setResetStatus('success')
-      setTimeout(() => navigate('/portal/dashboard', { replace: true }), 2000)
+      const { data: { user } } = await supabase.auth.getUser()
+      let isAdmin = user?.app_metadata?.is_admin === true
+      if (!isAdmin && user) {
+        const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+        isAdmin = data?.is_admin === true
+      }
+      setTimeout(() => navigate(isAdmin ? '/portal/admin' : '/portal/dashboard', { replace: true }), 2000)
     }
   }
 
