@@ -26,7 +26,12 @@ function envUrl(v, fallback) {
   return s || fallback;
 }
 
-const DEFAULT_COMMISSION_HQ_WEBHOOK_URL = "https://commisson-hq.vercel.app/api/webhook";
+const DEFAULT_COMMISSION_HQ_URL = "https://commisson-hq.vercel.app";
+const DEFAULT_COMMISSION_HQ_WEBHOOK_URL = `${DEFAULT_COMMISSION_HQ_URL}/api/webhook`;
+const COMMISSION_HQ_URL = envUrl(
+  import.meta.env.VITE_COMMISSION_HQ_WEBHOOK_URL,
+  DEFAULT_COMMISSION_HQ_WEBHOOK_URL,
+).replace(/\/api\/webhook\/?$/, "");
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -62,11 +67,13 @@ const STYLES = `
   .mb-pill-b { background: var(--mb-brobot-yellow); color: var(--mb-brobot-on-yellow); font-weight: 700; }
   .mb-h1 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(32px, 7vw, 54px); font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1; color: #0f172a; margin-bottom: 10px; }
   .mb-h1 em { font-style: italic; color: #d97706; }
-  .mb-sub { font-size: 15px; color: #475569; max-width: 460px; margin: 0 auto; line-height: 1.75; }
   .mb-rule { width: 56px; height: 2px; background: linear-gradient(90deg, #f5a623, #38bdf8); margin: 16px auto 0; border-radius: 2px; }
-  .mb-portal-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 7px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 12px; font-weight: 700; color: #475569; text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; transition: border-color 0.15s, color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
+  .mb-portal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 14px; }
+  .mb-portal-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 12px; font-weight: 700; color: #475569; text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; transition: border-color 0.15s, color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
   .mb-portal-link:hover { border-color: #f5a623; color: #d97706; box-shadow: 0 2px 8px rgba(245,166,35,0.15); }
   .mb-portal-link-dot { width: 7px; height: 7px; border-radius: 50%; background: #f5a623; flex-shrink: 0; }
+  .mb-portal-link-dot-hq { background: #38bdf8; }
+  .mb-portal-link-hq:hover { border-color: #38bdf8; color: #0284c7; box-shadow: 0 2px 8px rgba(56,189,248,0.18); }
 
   .mb-quick-links {
     margin: 0 auto 28px;
@@ -842,7 +849,7 @@ export default function DealSubmissionForm() {
       setBizOpen(false);
       return;
     }
-    const hqBase = envUrl(import.meta.env.VITE_COMMISSION_HQ_WEBHOOK_URL, DEFAULT_COMMISSION_HQ_WEBHOOK_URL).replace(/\/api\/webhook\/?$/, "");
+    const hqBase = COMMISSION_HQ_URL;
     const handle = window.setTimeout(async () => {
       setBizLoading(true);
       try {
@@ -1129,7 +1136,7 @@ export default function DealSubmissionForm() {
                 Questions? We&apos;re here for you — <span className="hl">info@thebrobot.com</span>
               </p>
               {form.sold_by === "brobot_rep" ? (
-                <a href="https://commisson-hq.vercel.app/clients" className="mb-success-portal-btn">
+                <a href={`${COMMISSION_HQ_URL}/clients`} className="mb-success-portal-btn">
                   Open CommissionHQ →
                 </a>
               ) : (
@@ -1158,12 +1165,17 @@ export default function DealSubmissionForm() {
               <span className="mb-pill mb-pill-b">Brobot</span>
             </div>
             <h1 className="mb-h1">New Client<br /><em>Deal Submission</em></h1>
-            <p className="mb-sub">Complete within 24 hours of close. One form for the full handoff—submit to Brobot for account activation.</p>
             <div className="mb-rule" />
-            <a href="/portal/login" className="mb-portal-link">
-              <span className="mb-portal-link-dot" />
-              Partner Portal — View My Deals →
-            </a>
+            <div className="mb-portal-links">
+              <a href="/portal/login" className="mb-portal-link">
+                <span className="mb-portal-link-dot" />
+                Partner Portal — View My Deals →
+              </a>
+              <a href={COMMISSION_HQ_URL} className="mb-portal-link mb-portal-link-hq">
+                <span className="mb-portal-link-dot mb-portal-link-dot-hq" />
+                CommissionHQ →
+              </a>
+            </div>
           </div>
 
           <nav className="mb-quick-links" aria-label="Quick links">
