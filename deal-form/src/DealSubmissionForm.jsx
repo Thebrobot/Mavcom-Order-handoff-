@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { PAYMENT_LINK_CATEGORIES, PAYMENT_PRICE_SUFFIX } from "./paymentLinks.js";
 import {
   PRODUCT_OPTIONS,
@@ -25,6 +25,8 @@ function envUrl(v, fallback) {
   const s = typeof v === "string" ? v.trim() : "";
   return s || fallback;
 }
+
+const DEFAULT_COMMISSION_HQ_WEBHOOK_URL = "https://commisson-hq.vercel.app/api/webhook";
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -409,6 +411,7 @@ const STYLES = `
   /* BILLING TOGGLE */
   .mb-billing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
   .mb-billing-card { padding: 14px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  button.mb-billing-card { text-align: left; font: inherit; width: 100%; color: inherit; }
   .mb-billing-card.selected { border-color: #f5a623; background: rgba(245,166,35,0.08); box-shadow: 0 0 0 1px rgba(245,166,35,0.1); }
   .mb-billing-title { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #000000; transition: color 0.2s; margin-bottom: 3px; }
   .mb-billing-card.selected .mb-billing-title { color: #d97706; }
@@ -472,6 +475,13 @@ const STYLES = `
   .mb-btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,166,35,0.35); }
   .mb-btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
   .mb-submit-error { color: #b91c1c; font-size: 14px; line-height: 1.55; margin: 0 0 14px; max-width: 520px; padding: 12px 14px; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; }
+  .mb-biz-wrap { position: relative; }
+  .mb-biz-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 8px 24px rgba(15,23,42,0.12); max-height: 240px; overflow: auto; padding: 4px; }
+  .mb-biz-item { width: 100%; text-align: left; background: #fff; border: none; border-radius: 6px; padding: 10px 12px; cursor: pointer; font-family: 'Barlow', sans-serif; }
+  .mb-biz-item:hover, .mb-biz-item.active { background: #f8fafc; }
+  .mb-biz-item-name { display: block; font-size: 15px; font-weight: 600; color: #0f172a; }
+  .mb-biz-item-addr { display: block; font-size: 12px; color: #64748b; margin-top: 2px; }
+  .mb-biz-hint { font-size: 12px; color: #64748b; margin-top: 6px; }
 
   /* SUCCESS */
   .mb-success { text-align: center; padding: 72px 20px 80px; animation: mb-success-in 0.55s ease-out; }
@@ -707,6 +717,7 @@ function buildWebhookPayload(form, dealLineSummaries) {
       serviceStartDate: form.start_date,
     },
     notes: form.notes,
+    soldBy: form.sold_by || null,
     confirmations: {
       agreementSigned: form.confirm_signed,
       payment: form.confirm_payment,
@@ -720,6 +731,11 @@ export default function DealSubmissionForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [soldByError, setSoldByError] = useState("");
+  const [bizHits, setBizHits] = useState([]);
+  const [bizOpen, setBizOpen] = useState(false);
+  const [bizLoading, setBizLoading] = useState(false);
+  const skipBizSearch = useRef(false);
   const [confirmUploadsDone, setConfirmUploadsDone] = useState(false);
   const [paymentCategoryIndex, setPaymentCategoryIndex] = useState(0);
   const [paymentLinkIndex, setPaymentLinkIndex] = useState(0);
@@ -733,6 +749,7 @@ export default function DealSubmissionForm() {
       sale_date: today, cc_collected: "", charge_date: "",
       rep_name: "", rep_email: "", closer_name: "", multi_location: false, signed_date: today, start_date: "",
       notes: "", confirm_signed: false, confirm_payment: false, confirm_onboard: false,
+      sold_by: "",
     };
   });
 
@@ -809,6 +826,71 @@ export default function DealSubmissionForm() {
   useEffect(() => {
     setPaymentLinkIndex(0);
   }, [paymentCategoryIndex]);
+
+  useEffect(() => {
+    if (step !== 1) {
+      setBizOpen(false);
+      return;
+    }
+    if (skipBizSearch.current) {
+      skipBizSearch.current = false;
+      return;
+    }
+    const q = String(form.business_name ?? "").trim();
+    if (q.length < 3) {
+      setBizHits([]);
+      setBizOpen(false);
+      return;
+    }
+    const hqBase = envUrl(import.meta.env.VITE_COMMISSION_HQ_WEBHOOK_URL, DEFAULT_COMMISSION_HQ_WEBHOOK_URL).replace(/\/api\/webhook\/?$/, "");
+    const handle = window.setTimeout(async () => {
+      setBizLoading(true);
+      try {
+        let hits = [];
+        try {
+          const res = await fetch(`${hqBase}/api/business-search?q=${encodeURIComponent(q)}`, {
+            signal: AbortSignal.timeout(2500),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            hits = Array.isArray(data.suggestions) ? data.suggestions : [];
+          }
+        } catch {
+          hits = [];
+        }
+        if (hits.length === 0) {
+          const photon = await fetch(
+            `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en&lat=39.8&lon=-98.5`,
+            { signal: AbortSignal.timeout(4000) },
+          );
+          if (photon.ok) {
+            const data = await photon.json();
+            hits = (data.features ?? []).map((f, i) => {
+              const p = f.properties ?? {};
+              const line1 = [p.housenumber, p.street].filter(Boolean).join(" ");
+              const line2 = [p.city, p.state, p.postcode].filter(Boolean).join(", ");
+              return {
+                id: `photon:${p.osm_id ?? i}`,
+                name: p.name || p.osm_value || q,
+                address: [line1, line2].filter(Boolean).join(", "),
+                phone: null,
+                website: null,
+                industry: null,
+              };
+            });
+          }
+        }
+        setBizHits(hits);
+        setBizOpen(hits.length > 0);
+      } catch {
+        setBizHits([]);
+        setBizOpen(false);
+      } finally {
+        setBizLoading(false);
+      }
+    }, 320);
+    return () => window.clearTimeout(handle);
+  }, [form.business_name, step]);
 
   const progFill = `${((step - 1) / (STEPS.length - 1)) * 100}%`;
 
@@ -928,13 +1010,25 @@ export default function DealSubmissionForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [REP_SMS_NUMBER]);
 
-  const goNext = () => { if (step < 5) setStep(s => s + 1); };
+  const goNext = () => {
+    if (step === 4 && form.sold_by !== "brobot_rep" && form.sold_by !== "partner") {
+      setSoldByError("Choose whether this deal was sold by a Brobot rep or a partner company.");
+      return;
+    }
+    setSoldByError("");
+    if (step < 5) setStep(s => s + 1);
+  };
   const goPrev = () => { if (step > 1) setStep(s => s - 1); };
 
   const handleSubmit = async () => {
     if (!confirmUploadsDone) return;
-    const url = import.meta.env.VITE_SUBMIT_WEBHOOK_URL;
-    if (!url || !String(url).trim()) {
+    if (form.sold_by !== "brobot_rep" && form.sold_by !== "partner") {
+      setSubmitError("Go back to the Rep step and choose Brobot rep or Partner company.");
+      return;
+    }
+    const ghlUrl = import.meta.env.VITE_SUBMIT_WEBHOOK_URL;
+    const hqUrl = envUrl(import.meta.env.VITE_COMMISSION_HQ_WEBHOOK_URL, DEFAULT_COMMISSION_HQ_WEBHOOK_URL);
+    if (form.sold_by === "partner" && (!ghlUrl || !String(ghlUrl).trim())) {
       setSubmitError("Add your webhook URL to the environment as VITE_SUBMIT_WEBHOOK_URL (see .env.example), then rebuild.");
       return;
     }
@@ -943,55 +1037,71 @@ export default function DealSubmissionForm() {
     try {
       const payload = buildWebhookPayload(form, dealLineSummaries);
 
-      // ── Primary: GHL webhook (unchanged) ──────────────────
-      const res = await fetch(String(url).trim(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text?.trim() || `Webhook returned ${res.status}`);
+      if (ghlUrl && String(ghlUrl).trim()) {
+        const res = await fetch(String(ghlUrl).trim(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text?.trim() || `Webhook returned ${res.status}`);
+        }
       }
 
-      // ── Secondary: Supabase portal record ─────────────────
-      const productCommTotal = calcProductCommissionTotal(form.products);
-      const upfront          = calcUpfront(form.products, dealLineSummaries.sumSetup);
-      const residual         = calcMonthlyResidual(productCommTotal, 0); // new partners start at 25%
+      if (form.sold_by === "brobot_rep") {
+        const hqRes = await fetch(hqUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!hqRes.ok) {
+          const text = await hqRes.text().catch(() => "");
+          let detail = text?.trim() || `CommissionHQ returned ${hqRes.status}`;
+          try {
+            const json = JSON.parse(text);
+            detail = json.message || json.error || json.hint || detail;
+          } catch { /* keep detail */ }
+          throw new Error(detail);
+        }
+      } else {
+        const productCommTotal = calcProductCommissionTotal(form.products);
+        const upfront          = calcUpfront(form.products, dealLineSummaries.sumSetup);
+        const residual         = calcMonthlyResidual(productCommTotal, 0);
 
-      // plan_mrc kept for reference — still the sum of base (1-device) Stripe prices
-      const planMrc = form.products.reduce((sum, p) => {
-        const base = getStripePriceUsd(p.productId, 1);
-        return sum + (base != null ? base : (parseMoney(p.mrc) || 0));
-      }, 0);
+        const planMrc = form.products.reduce((sum, p) => {
+          const base = getStripePriceUsd(p.productId, 1);
+          return sum + (base != null ? base : (parseMoney(p.mrc) || 0));
+        }, 0);
 
-      supabase.rpc("insert_deal", {
-        payload: {
-          rep_email:          form.rep_email.trim().toLowerCase(),
-          rep_name:           form.rep_name,
-          closer_name:        form.closer_name.trim() || null,
-          multi_location:     form.multi_location,
-          client_name:        `${form.contact_first} ${form.contact_last}`.trim(),
-          business_name:      form.business_name,
-          products_json:      form.products,
-          total_mrc:          dealLineSummaries.sumMrc,
-          plan_mrc:           planMrc,
-          total_setup:        dealLineSummaries.sumSetup,
-          commission_amount:  upfront,
-          upfront_commission: upfront,
-          monthly_residual:   residual,
-          sale_date:          form.sale_date || null,
-        },
-      }).then(({ error }) => {
-        if (error) console.warn("[Portal] Supabase insert failed:", error.message);
-      });
+        supabase.rpc("insert_deal", {
+          payload: {
+            rep_email:          form.rep_email.trim().toLowerCase(),
+            rep_name:           form.rep_name,
+            closer_name:        form.closer_name.trim() || null,
+            multi_location:     form.multi_location,
+            client_name:        `${form.contact_first} ${form.contact_last}`.trim(),
+            business_name:      form.business_name,
+            products_json:      form.products,
+            total_mrc:          dealLineSummaries.sumMrc,
+            plan_mrc:           planMrc,
+            total_setup:        dealLineSummaries.sumSetup,
+            commission_amount:  upfront,
+            upfront_commission: upfront,
+            monthly_residual:   residual,
+            sale_date:          form.sale_date || null,
+          },
+        }).then(({ error }) => {
+          if (error) console.warn("[Portal] Supabase insert failed:", error.message);
+        });
+      }
 
       setSubmitted(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Submission failed.";
       setSubmitError(
         msg.includes("Failed to fetch") || msg.includes("NetworkError")
-          ? "Could not reach the webhook (network or CORS). If this persists, use a serverless proxy or check the URL."
+          ? "Could not reach CommissionHQ or the CRM webhook (network or CORS). Check the URL and that the seller email matches a CommissionHQ rep."
           : msg,
       );
     } finally {
@@ -1011,14 +1121,22 @@ export default function DealSubmissionForm() {
               <h2>Deal <em>Logged.</em></h2>
               <div className="mb-success-rule" />
               <p className="mb-success-lead">
-                Everything you sent is with the Brobot team. <strong>Watch your inbox</strong> — your confirmation email should land shortly.
+                {form.sold_by === "brobot_rep"
+                  ? <>This client is in <strong>CommissionHQ</strong> for your team. Finish handoff and products there if anything still needs a check.</>
+                  : <>Everything you sent is with the Brobot team. <strong>Watch your inbox</strong> — your confirmation email should land shortly.</>}
               </p>
               <p className="mb-success-tail">
                 Questions? We&apos;re here for you — <span className="hl">info@thebrobot.com</span>
               </p>
-              <a href="/portal/login" className="mb-success-portal-btn">
-                View My Commission →
-              </a>
+              {form.sold_by === "brobot_rep" ? (
+                <a href="https://commisson-hq.vercel.app/clients" className="mb-success-portal-btn">
+                  Open CommissionHQ →
+                </a>
+              ) : (
+                <a href="/portal/login" className="mb-success-portal-btn">
+                  View My Commission →
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -1195,7 +1313,44 @@ export default function DealSubmissionForm() {
                   <div className="mb-g2">
                     <div className="mb-field mb-span2">
                       <label className="mb-label">Legal Business Name <span className="req">*</span></label>
-                      <input className="mb-input" value={form.business_name} onChange={e => set("business_name", e.target.value)} placeholder="As it appears on the signed agreement" />
+                      <div className="mb-biz-wrap">
+                        <input
+                          className="mb-input"
+                          value={form.business_name}
+                          onChange={e => set("business_name", e.target.value)}
+                          onFocus={() => { if (bizHits.length > 0) setBizOpen(true); }}
+                          placeholder="Start typing to search businesses"
+                          autoComplete="off"
+                        />
+                        {bizOpen && bizHits.length > 0 ? (
+                          <div className="mb-biz-list" role="listbox">
+                            {bizHits.map((hit) => (
+                              <button
+                                type="button"
+                                key={hit.id}
+                                className="mb-biz-item"
+                                onClick={() => {
+                                  skipBizSearch.current = true;
+                                  setBizOpen(false);
+                                  setBizHits([]);
+                                  setForm(f => ({
+                                    ...f,
+                                    business_name: hit.name || f.business_name,
+                                    address: hit.address || f.address,
+                                    website: hit.website || f.website,
+                                    biz_phone: hit.phone || f.biz_phone,
+                                    industry: hit.industry && INDUSTRIES.includes(hit.industry) ? hit.industry : f.industry,
+                                  }));
+                                }}
+                              >
+                                <span className="mb-biz-item-name">{hit.name}</span>
+                                {hit.address ? <span className="mb-biz-item-addr">{hit.address}</span> : null}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      <p className="mb-biz-hint">{bizLoading ? "Searching businesses…" : "Pick a match to fill address, website, and phone."}</p>
                     </div>
                     <div className="mb-field mb-span2">
                       <label className="mb-label">Full Address <span className="req">*</span></label>
@@ -1418,17 +1573,41 @@ export default function DealSubmissionForm() {
               <div className="mb-card">
                 <div className="mb-card-head">
                   <span className="mb-card-num">05 —</span>
-                  <span className="mb-card-title">Partner &amp; Deal Attribution</span>
+                  <span className="mb-card-title">Sold by &amp; attribution</span>
                 </div>
                 <div className="mb-card-body">
+                  <div className="mb-field" style={{ marginBottom: 16 }}>
+                    <label className="mb-label">Who sold this deal? <span className="req">*</span></label>
+                    <div className="mb-billing-grid" style={{ marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className={`mb-billing-card${form.sold_by === "brobot_rep" ? " selected" : ""}`}
+                        onClick={() => { set("sold_by", "brobot_rep"); setSoldByError(""); }}
+                      >
+                        <div className="mb-billing-title">Brobot rep</div>
+                        <div className="mb-billing-sub">Creates the client in CommissionHQ. Does not go to the partner portal.</div>
+                      </button>
+                      <button
+                        type="button"
+                        className={`mb-billing-card${form.sold_by === "partner" ? " selected" : ""}`}
+                        onClick={() => { set("sold_by", "partner"); setSoldByError(""); }}
+                      >
+                        <div className="mb-billing-title">Partner company</div>
+                        <div className="mb-billing-sub">Logs the deal in the Partner portal only. Internal reps stay out of this book.</div>
+                      </button>
+                    </div>
+                    {soldByError ? (
+                      <p className="mb-submit-error" style={{ marginTop: 12 }} role="alert">{soldByError}</p>
+                    ) : null}
+                  </div>
                   <div className="mb-g2">
                     <div className="mb-field">
-                      <label className="mb-label">Partner full name <span className="req">*</span></label>
+                      <label className="mb-label">{form.sold_by === "brobot_rep" ? "Rep full name" : "Partner full name"} <span className="req">*</span></label>
                       <input className="mb-input" value={form.rep_name} onChange={e => set("rep_name", e.target.value)} placeholder="First Last" />
                     </div>
                     <div className="mb-field">
-                      <label className="mb-label">Partner email <span className="req">*</span></label>
-                      <input className="mb-input" value={form.rep_email} onChange={e => set("rep_email", e.target.value)} placeholder="you@company.com" />
+                      <label className="mb-label">{form.sold_by === "brobot_rep" ? "Rep email" : "Partner email"} <span className="req">*</span></label>
+                      <input className="mb-input" value={form.rep_email} onChange={e => set("rep_email", e.target.value)} placeholder={form.sold_by === "brobot_rep" ? "you@thebrobot.com" : "you@company.com"} />
                     </div>
                     <div className="mb-field">
                       <label className="mb-label">Closer Name <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span></label>
@@ -1462,7 +1641,7 @@ export default function DealSubmissionForm() {
                     <textarea className="mb-textarea" value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="e.g. Client requested onboarding before April 1st, existing Hibu contract expires end of month…" />
                   </div>
                   <div className="mb-field" style={{ marginTop: 14 }}>
-                    <label className="mb-label">Partner Confirms <span className="req">*</span></label>
+                    <label className="mb-label">{form.sold_by === "brobot_rep" ? "Rep confirms" : "Partner Confirms"} <span className="req">*</span></label>
                     <div className="mb-checks">
                       {[
                         { key: "confirm_signed", text: "Client has reviewed and signed the service agreement." },
