@@ -205,4 +205,31 @@ export const PAYMENT_LINK_CATEGORIES = [
       },
     ],
   },
+  {
+    id: "revubro",
+    label: "RevuBro",
+    links: [
+      {
+        id: "revubro-starter",
+        shortLabel: "Starter",
+        label: "RevuBro Starter",
+        priceUsd: 97,
+        url: "https://buy.stripe.com/aFafZi3EMe0X1Jx8vJ6sw1L",
+      },
+      {
+        id: "revubro-growth",
+        shortLabel: "Growth",
+        label: "RevuBro Growth",
+        priceUsd: 197,
+        url: "https://buy.stripe.com/9B68wQ1wE7CzgEr8vJ6sw1M",
+      },
+      {
+        id: "revubro-pro",
+        shortLabel: "Pro",
+        label: "RevuBro Pro",
+        priceUsd: 297,
+        url: "https://buy.stripe.com/28EcN6a3a4qncob4ft6sw1N",
+      },
+    ],
+  },
 ];
