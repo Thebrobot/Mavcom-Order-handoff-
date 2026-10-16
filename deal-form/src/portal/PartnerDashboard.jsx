@@ -506,7 +506,7 @@ export default function PartnerDashboard() {
   const paidCount = deals.filter(d => d.commission_paid).length
 
   // Tier progress — lifetime commissionable = sum of product flat commission totals across all deals
-  // (the $130/$297/$794/$994 rates only — excludes setup fee portion, since residual is based on these)
+  // (Voice/Connect $130, Growth $297, Growth + AI bundles $794/$994 — excludes setup fee portion, since residual is based on these)
   const lifetimeEarned = deals.reduce((s, d) => {
     try {
       const products = Array.isArray(d.products_json) ? d.products_json : JSON.parse(d.products_json || '[]')

@@ -628,7 +628,7 @@ function formatUsd(n) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
-/** List prices in payment picker: whole dollars without “.00” (e.g. $335). */
+/** List prices in payment picker: whole dollars without “.00” (e.g. $345). */
 function formatListPriceUsd(n) {
   if (!Number.isFinite(n)) return "—";
   const r = Math.round(n);

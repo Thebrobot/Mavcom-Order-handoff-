@@ -1,18 +1,23 @@
 /**
  * Deal line-item catalog & pricing rules.
  *
- * **Source of truth for Brobot Basic / Core / AI stacks:** `paymentLinks.js` → `PAYMENT_LINK_CATEGORIES`.
+ * **Source of truth:** `paymentLinks.js` → `PAYMENT_LINK_CATEGORIES`
+ * (Brobot ONE payment-link sheet).
  * `computeCatalogMrc` reads the same `priceUsd` ladder so the deal form always matches the payment picker.
+ *
+ * Product ids for Voice, Growth, and the two Growth + Agent Broski bundles are unchanged
+ * so deals already saved under Basic / Core / AI still resolve.
  */
 
 import { PAYMENT_LINK_CATEGORIES } from "./paymentLinks.js";
 
 /** Maps deal form `productId` → payment category `id` in `paymentLinks.js`. */
 export const PRODUCT_ID_TO_PAYMENT_CATEGORY = {
-  "brobot-one-basic": "one-basic-devices",
-  "brobot-one-core": "one-core-devices",
-  "ai-receptionist-priority": "one-core-broski-aire",
-  "ai-growth-priority": "one-core-broski",
+  "brobot-one-basic": "one-voice",
+  "brobot-one-connect": "one-connect",
+  "brobot-one-core": "one-growth",
+  "ai-receptionist-priority": "growth-ai-receptionist",
+  "ai-growth-priority": "growth-ai-voice-sms",
 };
 
 function paymentCategoryForProduct(productId) {
@@ -44,24 +49,27 @@ export function getStripePriceUsd(productId, lineQtyRaw) {
   return last + step * (lines - L.length);
 }
 
-/** Brobot One Basic — lines 1–7 totals (from Stripe); useful for CRM hints. */
+/** Brobot One Voice — devices 1–10 (from the payment-link sheet). */
 export const BROBOT_ONE_BASIC_BY_LINES = Object.fromEntries(
-  Array.from({ length: 7 }, (_, i) => {
+  Array.from({ length: 10 }, (_, i) => {
     const n = i + 1;
     return [n, getStripePriceUsd("brobot-one-basic", n)];
   }),
 );
 
-/** Shorthand: Core MRR by line count (Stripe ladder). */
+/** Shorthand: Growth MRR by device count (Stripe ladder). */
 export function brobotOneCoreMrcForLines(n) {
   return getStripePriceUsd("brobot-one-core", n) ?? 0;
 }
 
-/** Default one-time setup fee (USD, no $) when a rep selects an Agent Broski line — edit here. */
+/**
+ * Default one-time setup fee (USD, no $) when a rep selects an Agent Broski line.
+ * Sheet: AI Receptionist setup $1,560 (price_1THsGyKLhcRydgv7ICx0x6a9),
+ * AI Growth setup $2,600 (price_1THsILKLhcRydgv7rutxbqzZ).
+ * Those setup prices have no standalone checkout link — they are optional add-ons on the Growth bundle links.
+ */
 export const DEFAULT_SETUP_FEE_USD_BY_PRODUCT = {
-  /** Agent Broski (Ai Receptionist) */
   "ai-receptionist-priority": "1560",
-  /** Agent Broski (Ai Voice + SMS) */
   "ai-growth-priority": "2600",
 };
 
@@ -70,13 +78,14 @@ export function defaultSetupFeeForProduct(productId) {
   return DEFAULT_SETUP_FEE_USD_BY_PRODUCT[productId] ?? "";
 }
 
-/** Deal line product selector — only the four Stripe ladders in `paymentLinks.js`. */
+/** Deal line product selector — same catalog as the payment-link sheet. */
 export const PRODUCT_OPTIONS = [
   { value: "", label: "Select product…" },
-  { value: "brobot-one-basic", label: "Brobot One Basic" },
-  { value: "brobot-one-core", label: "Brobot One Core" },
-  { value: "ai-receptionist-priority", label: "Agent Broski (Ai Receptionist)" },
-  { value: "ai-growth-priority", label: "Agent Broski (Ai Voice + SMS)" },
+  { value: "brobot-one-basic", label: "Brobot One Voice" },
+  { value: "brobot-one-connect", label: "Brobot One Connect" },
+  { value: "brobot-one-core", label: "Brobot One Growth" },
+  { value: "ai-receptionist-priority", label: "Brobot One Growth + AI Receptionist" },
+  { value: "ai-growth-priority", label: "Brobot One Growth + AI Growth (Voice + SMS)" },
 ];
 
 function oneLineDefaultFromStripe(productId) {
@@ -87,9 +96,10 @@ function oneLineDefaultFromStripe(productId) {
 /** Single-line prefills — Stripe 1-device price from `paymentLinks.js`. */
 export const PRODUCT_DEFAULT_MRC = {
   "brobot-one-basic": oneLineDefaultFromStripe("brobot-one-basic") ?? "152",
-  "brobot-one-core": oneLineDefaultFromStripe("brobot-one-core") ?? "335",
-  "ai-receptionist-priority": oneLineDefaultFromStripe("ai-receptionist-priority") ?? "852",
-  "ai-growth-priority": oneLineDefaultFromStripe("ai-growth-priority") ?? "1042",
+  "brobot-one-connect": oneLineDefaultFromStripe("brobot-one-connect") ?? "172",
+  "brobot-one-core": oneLineDefaultFromStripe("brobot-one-core") ?? "345",
+  "ai-receptionist-priority": oneLineDefaultFromStripe("ai-receptionist-priority") ?? "862",
+  "ai-growth-priority": oneLineDefaultFromStripe("ai-growth-priority") ?? "1070",
 };
 
 function parseUsd(raw) {

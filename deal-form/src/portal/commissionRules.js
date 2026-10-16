@@ -5,12 +5,21 @@
  * Update values here only — everything else imports from this file.
  */
 
-// ── Flat upfront commission per product (regardless of line count) ────────────
+// ── Flat upfront commission per product (regardless of device count) ─────────
+// Commissionable amount is the platform fee, plus the AI fee when Agent Broski
+// is included. Line fees and the 4% processing markup in the customer price
+// are not commissionable. Figures below are the platform / AI amounts on the
+// Brobot ONE payment-link sheet:
+//   Voice platform $130, Connect platform $130, Growth platform $297
+//   AI Receptionist $497, AI Growth (Voice + SMS) $697
+//   Growth + AI Receptionist bundle = 297 + 497 = 794
+//   Growth + AI Growth bundle       = 297 + 697 = 994
 export const PRODUCT_COMMISSION = {
-  'brobot-one-basic':            130,
-  'brobot-one-core':             297,
-  'ai-receptionist-priority':    794,
-  'ai-growth-priority':          994,
+  'brobot-one-basic':                 130, // Brobot One Voice
+  'brobot-one-connect':               130, // Brobot One Connect
+  'brobot-one-core':                  297, // Brobot One Growth
+  'ai-receptionist-priority':         794, // Growth + AI Receptionist
+  'ai-growth-priority':               994, // Growth + AI Growth (Voice + SMS)
 }
 
 // ── Setup fee commission percentage ──────────────────────────────────────────
